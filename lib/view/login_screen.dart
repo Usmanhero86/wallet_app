@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:wallet_app/view/create_account_screen.dart';
+import 'package:wallet_app/view/dashboard_screen.dart';
+import '../services/api_service.dart';
 import '../themes/theme_provider.dart';
 import '../services/auth_provider.dart';
 import '../widget/app_button.dart';
@@ -16,22 +18,20 @@ class LoginScreen extends StatelessWidget {
     final authProvider = Provider.of<AuthProvider>(context, listen: false);
 
     try {
-      // Call your authentication API here
-      // For example:
       // final response = await ApiService.login(
       //   emailController.text,
       //   passwordController.text,
       // );
 
       // Mock login for demonstration
-      authProvider.login(
-        emailController.text,
-        'your_auth_token_here', // Replace with actual token from API
-      );
+      // authProvider.login(
+      //   emailController.text,
+      //   'your_auth_token_here',
+      // );
 
       Navigator.pushReplacement(
         context,
-        MaterialPageRoute(builder: (_) =>  CreateAccountScreen()),
+        MaterialPageRoute(builder: (_) =>  DashboardScreen()),
       );
     } catch (e) {
       ScaffoldMessenger.of(context).showSnackBar(

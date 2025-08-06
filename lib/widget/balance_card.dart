@@ -1,10 +1,9 @@
-// views/dashboard/components/balance_card.dart
 import 'package:flutter/material.dart';
 
 class BalanceCard extends StatelessWidget {
   final double balance;
 
-  const BalanceCard({Key? key, required this.balance}) : super(key: key);
+  const BalanceCard({super.key, required this.balance});
 
   @override
   Widget build(BuildContext context) {

@@ -2,22 +2,24 @@ import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../model/balance_response.dart';
 import '../model/model.dart';
+import '../model/transaction_history.dart';
 import 'api_service.dart';
 import '../view/dashboard_screen.dart';
 
 
 class AccountProvider with ChangeNotifier {
-  List<Map<String, dynamic>> _createdAccounts = [];
+  final List<Map<String, dynamic>> _createdAccounts = [];
   bool isLoading = false;
   VirtualAccountResponse? accountResponse;
   BalanceResponse? balanceResponse;
   String? error;
-
-  int walletBalance = 9999;
+  int walletBalance = 0;
   bool loading = false;
 
   bool hasFetchedWalletBalance = false;
   bool hasFetchedTransaction = false;
+  List<TransactionItem> _transactions = [];
+  List<TransactionItem> get transactions => _transactions;
 
   Future<void> fetchWalletBalance(BuildContext context) async {
     if (loading || hasFetchedWalletBalance) return;
@@ -54,10 +56,14 @@ class AccountProvider with ChangeNotifier {
     notifyListeners();
 
     try {
-      final result = await ApiService.getTransactionDetails(); // ✅ correct method
-      print("Transactions fetched: $result");
-
+      final result = await ApiService.getTransactionDetails();
+      _transactions = result;
+      _transactions.sort((a, b) => b.transactionDate.compareTo(a.transactionDate));
       hasFetchedTransaction = true;
+
+      print("Transactions fetched: ${_transactions.length}");
+
+
     } catch (e) {
       debugPrint('Fetch transaction error: $e');
       error = 'Failed to fetch transactions';
@@ -67,7 +73,6 @@ class AccountProvider with ChangeNotifier {
     }
   }
   List<Map<String, dynamic>> get createdAccounts => _createdAccounts;
-
   Future<void> createVirtualAccount(Map<String, dynamic> payload, BuildContext context) async {
     isLoading = true;
     error = null;
@@ -95,4 +100,6 @@ class AccountProvider with ChangeNotifier {
     isLoading = false;
     notifyListeners();
   }
+
+
 }
