@@ -1,12 +1,15 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
+import '../model/transaction_history.dart';
+import '../storage/save_account.dart';
 import '../themes/theme_provider.dart';
 import '../services/api_service.dart';
 import '../services/auth_provider.dart';
 import '../services/account_provider.dart';
 import '../widget/app_button.dart';
 import '../widget/input_field.dart';
+import 'dashboard_screen.dart';
 import 'login_screen.dart';
 
 class SendPaymentScreen extends StatefulWidget {
@@ -30,49 +33,59 @@ class _SendPaymentScreenState extends State<SendPaymentScreen> {
 
     setState(() {
       _isLoading = true;
-      _message = '';
     });
 
     try {
       final token = Provider.of<AuthProvider>(context, listen: false).token;
       if (token == null) {
-        // Handle case where user is not authenticated
-        Navigator.pushReplacement(
-          context,
-          MaterialPageRoute(builder: (_) =>  LoginScreen()),
-        );
+        Navigator.pushReplacement(context, MaterialPageRoute(builder: (_) => DashboardScreen()));
         return;
       }
+
       final response = await ApiService.sendPayment(
         recipientController.text,
         double.parse(amountController.text),
         referenceController.text,
         token,
+      );
 
+
+      // Record the payment
+      final accountProvider = Provider.of<AccountProvider>(context, listen: false);
+      final payment = TransactionItem(
+        accountNumber: await getAccountName() ?? 'N/A', // Get this from your provider
+        destinationAccountNumber: recipientController.text,
+        amount: double.parse(amountController.text).toInt(),
+        balance: accountProvider.walletBalance - double.parse(amountController.text).toInt(), // Update with current balance if available
+        narration: referenceController.text.isNotEmpty
+            ? referenceController.text
+            : 'Payment to ${recipientController.text}',
+        transactionDate: DateTime.now(),
+        transactionRef: 'generated_ref_${DateTime.now().millisecondsSinceEpoch}',
+        transactionType: 'debit',
+      );
+
+      await accountProvider.recordSentPayment(payment);
+
+      // Navigate back to dashboard with success
+      Navigator.of(context).pushAndRemoveUntil(
+        MaterialPageRoute(builder: (_) => DashboardScreen()),
+            (route) => false,
       );
 
       setState(() {
         _isLoading = false;
         _isSuccess = true;
-        _message = response['message'];
+        _message = 'Payment sent successfully';
       });
 
-      // Optionally refresh balance after successful payment
-      Provider.of<AccountProvider>(context, listen: false).fetchWalletBalance(context);
-    } on PlatformException catch (e) {
-      setState(() {
-        _isLoading = false;
-        _isSuccess = false;
-        _message = e.message ?? 'Failed to send payment';
-      });
+      Navigator.pop(context); // Return to dashboard
     } catch (e) {
       setState(() {
         _isLoading = false;
         _isSuccess = false;
-        _message = 'An unexpected error occurred';
+        _message = 'Failed to send payment: ${e.toString()}';
       });
-
-
     }
   }
 

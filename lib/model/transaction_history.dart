@@ -44,7 +44,18 @@ class TransactionItem {
     required this.transactionRef,
     required this.transactionType,
   });
-
+  Map<String, dynamic> toJson() {
+    return {
+      'accountNumber': accountNumber,
+      'destinationAccountNumber': destinationAccountNumber,
+      'amount': amount,
+      'balance': balance,
+      'narration': narration,
+      'transactionDate': transactionDate.toIso8601String(),
+      'transactionRef': transactionRef,
+      'transactionType': transactionType,
+    };
+  }
   factory TransactionItem.fromJson(Map<String, dynamic> json) {
     return TransactionItem(
       accountNumber: json['accountNumber'] ?? '',

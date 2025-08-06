@@ -8,7 +8,6 @@ import '../widget/app_button.dart';
 import '../widget/balance_card.dart';
 import 'create_account_screen.dart';
 import 'package:fl_chart/fl_chart.dart';
-// import 'package:syncfusion_flutter_charts/charts.dart' as charts;
 
 class DashboardScreen extends StatefulWidget {
   const DashboardScreen({super.key});
@@ -18,6 +17,8 @@ class DashboardScreen extends StatefulWidget {
 }
 
 class _DashboardScreenState extends State<DashboardScreen> {
+
+
   @override
   void initState() {
     super.initState();
@@ -25,6 +26,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
       final provider = Provider.of<AccountProvider>(context, listen: false);
       provider.fetchWalletBalance(context);
       provider.fetchTransaction(context);
+      provider.loadSentPayments();
     });
   }
 
@@ -33,7 +35,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
     final provider = Provider.of<AccountProvider>(context);
     final transactions = provider.transactions
         .take(5)
-        .toList(); // Get last 5 transactions
+        .toList();
 
     return Scaffold(
       appBar: AppBar(
@@ -245,6 +247,44 @@ class _DashboardScreenState extends State<DashboardScreen> {
       ),
     );
   }
+  Widget _buildInfoItem(
+      BuildContext context, {
+        required String title,
+        required IconData icon,
+        required Color color,
+      }) {
+    final provider = Provider.of<AccountProvider>(context);
+
+    // Calculate amounts
+    final isExpense = title == 'Expenses';
+    final amount = isExpense
+        ? provider.sentPayments.fold(0, (sum, p) => sum + p.amount)
+        : (provider.walletBalance * 0.6).toInt();
+
+    return Card(
+      child: Padding(
+        padding: const EdgeInsets.all(12),
+        child: Column(
+          children: [
+            Text(title),
+            const SizedBox(height: 8),
+            Text(
+              '₦${amount.toString()}',
+              style: TextStyle(
+                color: isExpense ? Colors.red : Colors.green,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+            if (isExpense) Text(
+              '${provider.sentPayments.length} transactions',
+              style: const TextStyle(fontSize: 12),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
 }
 
 // Helper class for chart data

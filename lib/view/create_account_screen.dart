@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:get_storage/get_storage.dart';
 import 'package:provider/provider.dart';
 import '../themes/theme_provider.dart';
 import '../services/account_provider.dart';
@@ -14,7 +15,6 @@ class CreateAccountScreen extends StatefulWidget {
 
 class _CreateAccountScreenState extends State<CreateAccountScreen> {
   final _formKey = GlobalKey<FormState>();
-  final bank = TextEditingController();
   final _firstName = TextEditingController();
   final _surname = TextEditingController();
   final _email = TextEditingController();
@@ -26,9 +26,17 @@ class _CreateAccountScreenState extends State<CreateAccountScreen> {
   final state = TextEditingController();
   final gender = TextEditingController();
 
+  // List of banks for dropdown
+  final List<String> _banks = [
+    'Select Bank',
+    'fcmb',
+    'fidelity',
+    'GTBank'
+  ];
+  String _selectedBank = 'Select Bank';
+
   @override
   void dispose() {
-    bank.dispose();
     _firstName.dispose();
     _surname.dispose();
     _email.dispose();
@@ -44,9 +52,15 @@ class _CreateAccountScreenState extends State<CreateAccountScreen> {
 
   void _submitForm(BuildContext context) {
     if (_formKey.currentState!.validate()) {
+      if (_selectedBank == 'Select Bank') {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Please select a bank')),
+        );
+        return;
+      }
       final provider = Provider.of<AccountProvider>(context, listen: false);
       final payload = {
-        "bankType": bank.text,
+        "bankType": _selectedBank,
         "firstName": _firstName.text,
         "surname": _surname.text,
         "email": _email.text,
@@ -91,11 +105,40 @@ class _CreateAccountScreenState extends State<CreateAccountScreen> {
     key: _formKey,
     child: ListView(
     children: [
-    CustomTextFormField(
-    controller: bank,
-        labelText: 'Bank Type',
-      validator: (value) => value!.isEmpty ? 'Required' : null,
-    ),
+      // Bank Type Dropdown
+      Padding(
+        padding: const EdgeInsets.all(8.0),
+        child: DropdownButtonFormField<String>(
+          value: _selectedBank,
+          decoration: InputDecoration(
+            labelText: 'Bank Type',
+            border: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(10),
+            ),
+            filled: true,
+            fillColor: Colors.white,
+            contentPadding: const EdgeInsets.symmetric(
+                horizontal: 16, vertical: 12),
+          ),
+          items: _banks.map((String bank) {
+            return DropdownMenuItem<String>(
+              value: bank,
+              child: Text(bank),
+            );
+          }).toList(),
+          onChanged: (String? newValue) {
+            setState(() {
+              _selectedBank = newValue!;
+            });
+          },
+          validator: (value) {
+            if (value == null || value == 'Select Bank') {
+              return 'Please select a bank';
+            }
+            return null;
+          },
+        ),
+      ),
       CustomTextFormField(
     controller: _firstName,
           labelText: 'First Name',
@@ -181,7 +224,7 @@ class _CreateAccountScreenState extends State<CreateAccountScreen> {
                 const SizedBox(height: 10),
                 Text('Account Number: ${provider.accountResponse!.accountNumber}'),
                 Text('Account Name: ${provider.accountResponse!.accountName}'),
-                Text('Bank: ${bank.text}'),
+                Text('Bank: ${_selectedBank.val}'),
               ],
             ),
           ),
@@ -194,9 +237,15 @@ class _CreateAccountScreenState extends State<CreateAccountScreen> {
 
   void submitForm(BuildContext context) async {
     if (_formKey.currentState!.validate()) {
-      final provider = Provider.of<AccountProvider>(context, listen: false);
+      if (_selectedBank == 'Select Bank') {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Please select a bank')),
+        );
+        return;
+      }
+      final provider = Provider.of<AccountProvider>(context, listen: true);
       final payload = {
-        "bankType": bank.text,
+        "bankType": _selectedBank,
         "firstName": _firstName.text,
         "surname": _surname.text,
         "email": _email.text,
@@ -213,9 +262,12 @@ class _CreateAccountScreenState extends State<CreateAccountScreen> {
       await provider.createVirtualAccount(payload, context);
 
       // Clear form after successful creation
+
       if (provider.accountResponse != null) {
         _formKey.currentState?.reset();
-        bank.clear();
+        setState(() {
+          _selectedBank = 'Select Bank';
+        });
         _firstName.clear();
         _surname.clear();
         _email.clear();

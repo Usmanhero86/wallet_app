@@ -13,6 +13,7 @@ class ApiService {
 
       static Future<Map<String, dynamic>> createVirtualAccount(Map<String, dynamic> payload) async {
     final url = Uri.parse('https://sandbox.zainpay.ng/virtual-account/create/request');
+    print('Sending payload: $payload');
     final response = await http.post(
       url,
       headers: {
