@@ -18,11 +18,8 @@ This is a Flutter application built to demonstrate connecting to the Zainpay API
 ## Setup Instructions
 
 1.  Clone the repository.
-2.  Create a `.env` file in the root of the project.
-3.  Add your Zainpay Test Public Key to the `.env` file:
-    `ZAINPAY_PUBLIC_KEY=your_key_here`
-4.  Run `flutter pub get` to install dependencies.
-5.  Run the app: `flutter run`.
+2.  Run `flutter pub get` to install dependencies.
+3.  Run the app: `flutter run`.
 
 ## API Endpoints Used
 
@@ -33,4 +30,5 @@ This is a Flutter application built to demonstrate connecting to the Zainpay API
 ## Notes
 *   The login screen is mocked and does not perform real authentication.
 *   The charting bonus feature was not implemented.
+
 
