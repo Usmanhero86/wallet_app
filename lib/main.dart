@@ -27,7 +27,8 @@ void main() async{
         // ChangeNotifierProvider(create: (_) => AccountProvider()),
         ChangeNotifierProvider(
           create: (_) => AccountProvider() ..walletBalance = initialBalance
-            ..loadSentPayments(),
+            ..loadSentPayments()
+          ..loadAccountInfo(),
         ),
       ],
       child: const MyApp(),

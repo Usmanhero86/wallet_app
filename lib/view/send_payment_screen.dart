@@ -51,6 +51,7 @@ class _SendPaymentScreenState extends State<SendPaymentScreen> {
 
 
       // Record the payment
+
       final accountProvider = Provider.of<AccountProvider>(context, listen: false);
       final payment = TransactionItem(
         accountNumber: await getAccountName() ?? 'N/A', // Get this from your provider

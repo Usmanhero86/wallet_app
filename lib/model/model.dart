@@ -26,4 +26,12 @@ class VirtualAccountResponse {
       accountNumber: data['accountNumber'] ?? '',
     );
   }
+  Map<String, dynamic> toJson() {
+    return {
+      'accountName': accountName,
+      'accountNumber': accountNumber,
+      'bankName': bankName,
+    };
+  }
+
 }

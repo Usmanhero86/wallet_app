@@ -18,7 +18,6 @@ class DashboardScreen extends StatefulWidget {
 
 class _DashboardScreenState extends State<DashboardScreen> {
 
-
   @override
   void initState() {
     super.initState();
@@ -33,10 +32,10 @@ class _DashboardScreenState extends State<DashboardScreen> {
   @override
   Widget build(BuildContext context) {
     final provider = Provider.of<AccountProvider>(context);
-    final transactions = provider.transactions
-        .take(5)
-        .toList();
-
+    final transactions = [
+      ...provider.sentPayments,
+      ...provider.transactions
+    ]..sort((a, b) => b.transactionDate.compareTo(a.transactionDate));
     return Scaffold(
       appBar: AppBar(
         title: const Text('Dashboard'),
@@ -67,6 +66,12 @@ class _DashboardScreenState extends State<DashboardScreen> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
+                    if (provider.accountResponse != null) ...[
+                      Text('Account Name: ${provider.accountResponse!.accountName}'),
+                      Text('Account Number: ${provider.accountResponse!.accountNumber}'),
+                      Text('Bank: ${provider.accountResponse!.bankName}'),
+                    ],
+
                     // Balance Card
                     BalanceCard(balance: provider.walletBalance.toDouble()),
 

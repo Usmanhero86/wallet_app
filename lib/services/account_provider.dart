@@ -87,7 +87,7 @@ class AccountProvider with ChangeNotifier {
 
     try {
       final result = await ApiService.getTransactionDetails();
-      _transactions = result;
+      _transactions = [...result, ..._sentPayments];
       _transactions.sort((a, b) => b.transactionDate.compareTo(a.transactionDate));
       hasFetchedTransaction = true;
 
@@ -114,6 +114,7 @@ class AccountProvider with ChangeNotifier {
         accountResponse = VirtualAccountResponse.fromJson(result);
         final accountName = accountResponse?.accountNumber;
         final prefs = await SharedPreferences.getInstance();
+        await prefs.setString('accountResponse', jsonEncode(accountResponse?.toJson()));
         await prefs.setString('accountName', accountName ?? '');
         print('Account number saved: $accountName');
         ScaffoldMessenger.of(context).showSnackBar(
@@ -142,6 +143,15 @@ class AccountProvider with ChangeNotifier {
     // isLoading = false;
     // notifyListeners();
   }
+  Future<void> loadAccountInfo() async {
+    final prefs = await SharedPreferences.getInstance();
+    final jsonString = prefs.getString('accountResponse');
+    if (jsonString != null) {
+      accountResponse = VirtualAccountResponse.fromJson(jsonDecode(jsonString));
+      notifyListeners();
+    }
+  }
+
 
 
 }
