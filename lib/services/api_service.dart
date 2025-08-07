@@ -1,6 +1,7 @@
 import 'dart:convert';
 import 'package:flutter/services.dart';
 import 'package:http/http.dart' as http;
+import '../model/balance_response.dart';
 import '../model/transaction_history.dart';
 import '../storage/save_account.dart';
 
@@ -27,10 +28,9 @@ class ApiService {
   }
 
 
-  static Future<int> getWalletBalance() async {
-    final key = await getAccountName();
+  static Future<BalanceResponse> getWalletBalance(String key) async {
+    // final key = await getAccountName();
     final url = Uri.parse('https://sandbox.zainpay.ng/virtual-account/wallet/balance/$key');
-
     final response = await http.get(
       url,
       headers: {
@@ -38,13 +38,11 @@ class ApiService {
         'Authorization': 'Bearer eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJpc3MiOiJodHRwczovL3phaW5wYXkubmciLCJpYXQiOjE2OTIzNTcxMzEsImlkIjpmZDMxODYxNy00MGQyLTQzZGYtYTJjMi0wNTIwNGQ1NDM1YmQsIm5hbWUiOmhhdXdhLmRhbGhhdHVAaG90bWFpbC5jb20sInJvbGUiOmhhdXdhLmRhbGhhdHVAaG90bWFpbC5jb20sInNlY3JldEtleSI6Y2tJM2w1cko5VXZ5bWJUbDZGQkNHbUwwNElIcmdzOVFOaUxCMk0waHBqVjdPfQ.BhLQzwEzMGs2fNj1As12i3zhl9w0M66mOo-kDPGwrUM',
       },
     );
-
     print(response.body);
-
     final Map<String, dynamic> data = jsonDecode(response.body);
     if (data['code'] == '00' || data['status'] == '200 OK') {
       final balance = data['data']['balanceAmount'];
-      return balance is int ? balance : int.tryParse(balance.toString()) ?? 0;
+      return BalanceResponse.fromJson(balance);
     } else {
       throw Exception('Failed to fetch wallet balance: ${data['description']}');
     }

@@ -23,7 +23,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
     super.initState();
     WidgetsBinding.instance.addPostFrameCallback((_) {
       final provider = Provider.of<AccountProvider>(context);
-      provider.fetchWalletBalance(context);
+      provider.fetchWalletBalance(context, '');
       provider.fetchTransaction(context);
       provider.loadSentPayments();
     });
@@ -59,7 +59,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
           ? const Center(child: CircularProgressIndicator())
           : RefreshIndicator(
               onRefresh: () async {
-                await provider.fetchWalletBalance(context);
+                await provider.fetchWalletBalance(context, '');
                 await provider.fetchTransaction(context);
               },
               child: SingleChildScrollView(
@@ -76,9 +76,13 @@ class _DashboardScreenState extends State<DashboardScreen> {
                     // Balance Card
                     Consumer<AccountProvider>(
                       builder: (context, provider, child) {
-                        return BalanceCard(balance: provider.walletBalance.toDouble());
+                        return Text(
+                          '₦${provider.walletBalance}',
+                          style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+                        );
                       },
                     ),
+
 
 
                     if (provider.createdAccounts.isNotEmpty) ...[
@@ -135,7 +139,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
 
                             if (result == true) {
                               final provider = Provider.of<AccountProvider>(context, listen: false);
-                              await provider.fetchWalletBalance(context);
+                              await provider.fetchWalletBalance(context, 'key');
                               await provider.fetchTransaction(context);
                               await provider.loadSentPayments();
                             }
@@ -246,7 +250,6 @@ class _DashboardScreenState extends State<DashboardScreen> {
 
   Widget _buildTransactionItem(TransactionItem transaction) {
     final isCredit = transaction.transactionType == 'credit';
-
     return Card(
       elevation: 1,
       margin: EdgeInsets.zero,

@@ -6,9 +6,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:wallet_app/themes/theme_provider.dart';
 import 'package:wallet_app/services/auth_provider.dart';
 import 'package:wallet_app/services/account_provider.dart';
-import 'package:wallet_app/view/dashboard_screen.dart';
 import 'package:wallet_app/view/login_screen.dart';
-import 'package:wallet_app/view/wallet_screen.dart';
 import 'themes/theme.dart';
 
 void main() async{

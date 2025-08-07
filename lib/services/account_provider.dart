@@ -81,20 +81,22 @@ class AccountProvider with ChangeNotifier {
     await prefs.setInt('balance', walletBalance);
     notifyListeners();
   }
-  Future<void> fetchWalletBalance(BuildContext context) async {
+  Future<void> fetchWalletBalance(BuildContext context, String key) async {
     if (loading || hasFetchedWalletBalance) return;
+
     loading = true;
     notifyListeners();
+
     try {
-      final result = await ApiService.getWalletBalance();
-      walletBalance = result;
+      final result = await ApiService.getWalletBalance(key);
+      walletBalance = result.data.balanceAmount;
+
       final prefs = await SharedPreferences.getInstance();
       await prefs.setInt('balance', walletBalance);
+
       hasFetchedWalletBalance = true;
-      print('Wallet balance saved: $walletBalance');
-    } catch (e) {
-      debugPrint('Fetch balance error: $e');
-      error = 'Failed to fetch wallet balance';
+      print('Wallet balance: ₦$walletBalance');
+
     } finally {
       loading = false;
       notifyListeners();

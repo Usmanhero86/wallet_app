@@ -1,38 +1,63 @@
 class BalanceResponse {
   final String code;
+  final Data data;
   final String description;
   final String status;
-  final String bankType;
-  final String accountName;
-  final String accountNumber;
-  final String bankCode;
-  final double balanceAmount;
-  final DateTime transactionDate;
 
   BalanceResponse({
     required this.code,
+    required this.data,
     required this.description,
     required this.status,
-    required this.bankType,
+  });
+
+  factory BalanceResponse.fromJson(Map<String, dynamic> json) {
+    return BalanceResponse(
+      code: json['code'] ?? '',
+      data: Data.fromJson(json['data'] ?? {}),
+      description: json['description'] ?? '',
+      status: json['status'] ?? '',
+    );
+  }
+
+  Map<String, dynamic> toJson() {
+    return {
+      'code': code,
+      'data': data.toJson(),
+      'description': description,
+      'status': status,
+    };
+  }
+}
+
+class Data {
+  final String accountName;
+  final String accountNumber;
+  final int balanceAmount;
+  final String transactionDate;
+
+  Data({
     required this.accountName,
     required this.accountNumber,
-    required this.bankCode,
     required this.balanceAmount,
     required this.transactionDate,
   });
 
-  factory BalanceResponse.fromJson(Map<String, dynamic> json) {
-    final data = json['data'] ?? {};
-    return BalanceResponse(
-      code: json['code'] ?? '',
-      description: json['description'] ?? '',
-      status: json['status'] ?? '',
-      bankType: data['bankType'] ?? '',
-      accountName: data['accountName'] ?? '',
-      accountNumber: data['accountNumber'] ?? '',
-      bankCode: data['bankCode'] ?? '',
-      balanceAmount: (data['balanceAmount'] ?? 0).toDouble(),
-      transactionDate: DateTime.parse(data['transactionDate'] ?? DateTime.now().toIso8601String()),
+  factory Data.fromJson(Map<String, dynamic> json) {
+    return Data(
+      accountName: json['accountName'] ?? '',
+      accountNumber: json['accountNumber'] ?? '',
+      balanceAmount: json['balanceAmount'] ?? 0,
+      transactionDate: json['transactionDate'] ?? '',
     );
+  }
+
+  Map<String, dynamic> toJson() {
+    return {
+      'accountName': accountName,
+      'accountNumber': accountNumber,
+      'balanceAmount': balanceAmount,
+      'transactionDate': transactionDate,
+    };
   }
 }

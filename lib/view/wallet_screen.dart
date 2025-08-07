@@ -22,7 +22,7 @@ class _WalletScreenState extends State<WalletScreen> {
   Future<void> _loadData() async {
     final provider = Provider.of<AccountProvider>(context, listen: false);
     try {
-      await provider.fetchWalletBalance(context);
+      await provider.fetchWalletBalance(context, '');
       await provider.fetchTransaction(context);
     } catch (e) {
       ScaffoldMessenger.of(context).showSnackBar(
