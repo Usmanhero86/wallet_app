@@ -18,16 +18,6 @@ class LoginScreen extends StatelessWidget {
     final authProvider = Provider.of<AuthProvider>(context, listen: false);
 
     try {
-      // final response = await ApiService.login(
-      //   emailController.text,
-      //   passwordController.text,
-      // );
-
-      // Mock login for demonstration
-      // authProvider.login(
-      //   emailController.text,
-      //   'your_auth_token_here',
-      // );
 
       Navigator.pushReplacement(
         context,

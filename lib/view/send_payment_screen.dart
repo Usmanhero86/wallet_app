@@ -1,175 +1,89 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
-import '../model/transaction_history.dart';
-import '../storage/save_account.dart';
-import '../themes/theme_provider.dart';
-import '../services/api_service.dart';
-import '../services/auth_provider.dart';
 import '../services/account_provider.dart';
-import '../widget/app_button.dart';
-import '../widget/input_field.dart';
-import 'dashboard_screen.dart';
-import 'login_screen.dart';
 
 class SendPaymentScreen extends StatefulWidget {
   const SendPaymentScreen({super.key});
 
   @override
-  _SendPaymentScreenState createState() => _SendPaymentScreenState();
+  State<SendPaymentScreen> createState() => _SendPaymentScreenState();
 }
 
 class _SendPaymentScreenState extends State<SendPaymentScreen> {
   final _formKey = GlobalKey<FormState>();
-  final recipientController = TextEditingController();
-  final amountController = TextEditingController();
-  final referenceController = TextEditingController();
-  bool _isLoading = false;
-  String _message = '';
-  bool _isSuccess = false;
+  final _amountController = TextEditingController();
+  final _narrationController = TextEditingController();
 
-  Future<void> sendPayment() async {
+  bool _isSending = false;
+
+  Future<void> _sendPayment() async {
     if (!_formKey.currentState!.validate()) return;
 
-    setState(() {
-      _isLoading = true;
-    });
+    setState(() => _isSending = true);
+
+    final provider = Provider.of<AccountProvider>(context, listen: false);
 
     try {
-      final token = Provider.of<AuthProvider>(context, listen: false).token;
-      if (token == null) {
-        Navigator.pushReplacement(context, MaterialPageRoute(builder: (_) => DashboardScreen()));
-        return;
-      }
+      final amount = double.parse(_amountController.text.trim());
+      final narration = _narrationController.text.trim();
 
-      final response = await ApiService.sendPayment(
-        recipientController.text,
-        double.parse(amountController.text),
-        referenceController.text,
-        token,
+      await provider.sendPayment(amount, narration, ' ');
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Payment sent successfully')),
       );
 
-
-      // Record the payment
-
-      final accountProvider = Provider.of<AccountProvider>(context, listen: false);
-      final payment = TransactionItem(
-        accountNumber: await getAccountName() ?? 'N/A', // Get this from your provider
-        destinationAccountNumber: recipientController.text,
-        amount: double.parse(amountController.text).toInt(),
-        balance: accountProvider.walletBalance - double.parse(amountController.text).toInt(), // Update with current balance if available
-        narration: referenceController.text.isNotEmpty
-            ? referenceController.text
-            : 'Payment to ${recipientController.text}',
-        transactionDate: DateTime.now(),
-        transactionRef: 'generated_ref_${DateTime.now().millisecondsSinceEpoch}',
-        transactionType: 'debit',
-      );
-
-      await accountProvider.recordSentPayment(payment);
-
-      // Navigate back to dashboard with success
-      Navigator.of(context).pushAndRemoveUntil(
-        MaterialPageRoute(builder: (_) => DashboardScreen()),
-            (route) => false,
-      );
-
-      setState(() {
-        _isLoading = false;
-        _isSuccess = true;
-        _message = 'Payment sent successfully';
-      });
-
-      Navigator.pop(context); // Return to dashboard
+      Navigator.pop(context, true); // ✅ Return true to trigger dashboard refresh
     } catch (e) {
-      setState(() {
-        _isLoading = false;
-        _isSuccess = false;
-        _message = 'Failed to send payment: ${e.toString()}';
-      });
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Error: $e')),
+      );
+    } finally {
+      setState(() => _isSending = false);
     }
-  }
-
-  @override
-  void dispose() {
-    recipientController.dispose();
-    amountController.dispose();
-    referenceController.dispose();
-    super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: Text('Send Payment'),
-        actions: [
-          Consumer<ThemeProvider>(
-            builder: (context, themeProvider, child) {
-              return IconButton(
-                icon: Icon(themeProvider.isDarkMode
-                    ? Icons.light_mode
-                    : Icons.dark_mode),
-                onPressed: () {
-                  themeProvider.toggleTheme(!themeProvider.isDarkMode);
-                },
-              );
-            },
-          ),
-        ],
-      ),
+      appBar: AppBar(title: const Text('Send Payment')),
       body: Padding(
-        padding: const EdgeInsets.all(16.0),
+        padding: const EdgeInsets.all(16),
         child: Form(
           key: _formKey,
-          child: ListView(
+          child: Column(
             children: [
-              CustomTextFormField(
-                controller: recipientController,
-                labelText: 'Recipient Account',
-                validator: (value) {
-                  if (value == null || value.isEmpty) {
-                    return 'Please enter recipient account';
-                  }
-                  return null;
-                },
-              ),
-              SizedBox(height: 16),
-              CustomTextFormField(
-                controller: amountController,
-                labelText: 'Amount',
-                keyboardType: TextInputType.numberWithOptions(decimal: true),
-                validator: (value) {
-                  if (value == null || value.isEmpty) {
-                    return 'Please enter an amount';
-                  }
-                  if (double.tryParse(value) == null) {
-                    return 'Please enter a valid number';
-                  }
-                  return null;
-                },
-              ),
-              SizedBox(height: 16),
-              CustomTextFormField(
-                controller: referenceController,
-                labelText: 'Reference (Optional)',
-              ),
-              SizedBox(height: 20),
-              _isLoading
-                  ? Center(child: CircularProgressIndicator())
-                  : AppButton(
-                onPressed: sendPayment,
-                text: 'Send Payment',
-              ),
-              if (_message.isNotEmpty)
-                Padding(
-                  padding: const EdgeInsets.only(top: 20),
-                  child: Text(
-                    _message,
-                    style: TextStyle(
-                      color: _isSuccess ? Colors.green : Colors.red,
-                    ),
-                  ),
+              TextFormField(
+                controller: _amountController,
+                keyboardType: TextInputType.number,
+                decoration: const InputDecoration(
+                  labelText: 'Amount',
+                  border: OutlineInputBorder(),
                 ),
+                validator: (value) {
+                  if (value == null || value.isEmpty) return 'Enter amount';
+                  final val = double.tryParse(value);
+                  if (val == null || val <= 0) return 'Enter valid amount';
+                  return null;
+                },
+              ),
+              const SizedBox(height: 16),
+              TextFormField(
+                controller: _narrationController,
+                decoration: const InputDecoration(
+                  labelText: 'Narration',
+                  border: OutlineInputBorder(),
+                ),
+                validator: (value) =>
+                value == null || value.isEmpty ? 'Enter narration' : null,
+              ),
+              const SizedBox(height: 24),
+              ElevatedButton(
+                onPressed: _isSending ? null : _sendPayment,
+                child: _isSending
+                    ? const CircularProgressIndicator()
+                    : const Text('Send'),
+              ),
             ],
           ),
         ),

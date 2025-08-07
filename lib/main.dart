@@ -7,7 +7,9 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:wallet_app/themes/theme_provider.dart';
 import 'package:wallet_app/services/auth_provider.dart';
 import 'package:wallet_app/services/account_provider.dart';
+import 'package:wallet_app/view/dashboard_screen.dart';
 import 'package:wallet_app/view/login_screen.dart';
+import 'package:wallet_app/view/wallet_screen.dart';
 import 'themes/theme.dart';
 
 void main() async{
@@ -24,12 +26,7 @@ void main() async{
       providers: [
         ChangeNotifierProvider(create: (_) => ThemeProvider()),
         ChangeNotifierProvider(create: (_) => AuthProvider()),
-        // ChangeNotifierProvider(create: (_) => AccountProvider()),
-        ChangeNotifierProvider(
-          create: (_) => AccountProvider() ..walletBalance = initialBalance
-            ..loadSentPayments()
-          ..loadAccountInfo(),
-        ),
+        ChangeNotifierProvider(create: (_) => AccountProvider()), // Simplified
       ],
       child: const MyApp(),
     ),
@@ -57,7 +54,7 @@ class MyApp extends StatelessWidget {
       theme: lightTheme,
       darkTheme: darkTheme,
       themeMode: themeProvider.themeMode,
-      home:LoginScreen(),
+      home:DashboardScreen()
     );
   }
 }

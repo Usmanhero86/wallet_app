@@ -22,17 +22,18 @@ class _DashboardScreenState extends State<DashboardScreen> {
   void initState() {
     super.initState();
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      final provider = Provider.of<AccountProvider>(context, listen: false);
+      final provider = Provider.of<AccountProvider>(context);
       provider.fetchWalletBalance(context);
       provider.fetchTransaction(context);
       provider.loadSentPayments();
     });
   }
 
+
   @override
   Widget build(BuildContext context) {
     final provider = Provider.of<AccountProvider>(context);
-    final transactions = [
+    final allTransactions = [
       ...provider.sentPayments,
       ...provider.transactions
     ]..sort((a, b) => b.transactionDate.compareTo(a.transactionDate));
@@ -73,12 +74,39 @@ class _DashboardScreenState extends State<DashboardScreen> {
                     ],
 
                     // Balance Card
-                    BalanceCard(balance: provider.walletBalance.toDouble()),
+                    Consumer<AccountProvider>(
+                      builder: (context, provider, child) {
+                        return BalanceCard(balance: provider.walletBalance.toDouble());
+                      },
+                    ),
+
+
+                    if (provider.createdAccounts.isNotEmpty) ...[
+                      const SizedBox(height: 24),
+                      Text('Virtual Accounts', style: Theme.of(context).textTheme.titleLarge),
+                      const SizedBox(height: 8),
+                      ListView.builder(
+                        shrinkWrap: true,
+                        physics: const NeverScrollableScrollPhysics(),
+                        itemCount: provider.createdAccounts.length,
+                        itemBuilder: (context, index) {
+                          final account = provider.createdAccounts[index];
+                          return Card(
+                            child: ListTile(
+                              title: Text(account['accountName'] ?? 'No Name'),
+                              subtitle: Text('Account No: ${account['accountNumber']}'),
+                              trailing: Text(account['bankName'] ?? ''),
+                            ),
+                          );
+                        },
+                      ),
+                    ],
+
 
                     const SizedBox(height: 24),
 
                     // Spending Chart
-                    _buildSpendingChart(transactions),
+                    _buildSpendingChart(allTransactions),
 
                     const SizedBox(height: 24),
 
@@ -99,17 +127,23 @@ class _DashboardScreenState extends State<DashboardScreen> {
                           padding: 12,
                         ),
                         AppButton(
-                          onPressed: () {
-                            Navigator.push(
+                          onPressed: () async {
+                            final result = await Navigator.push(
                               context,
-                              MaterialPageRoute(
-                                builder: (_) => const SendPaymentScreen(),
-                              ),
+                              MaterialPageRoute(builder: (_) => const SendPaymentScreen()),
                             );
+
+                            if (result == true) {
+                              final provider = Provider.of<AccountProvider>(context, listen: false);
+                              await provider.fetchWalletBalance(context);
+                              await provider.fetchTransaction(context);
+                              await provider.loadSentPayments();
+                            }
                           },
                           text: 'Send Money',
                           padding: 12,
                         ),
+
                       ],
                     ),
 
@@ -123,7 +157,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                           'Recent Transactions',
                           style: Theme.of(context).textTheme.titleLarge,
                         ),
-                        if (transactions.isNotEmpty)
+                        if (allTransactions.isNotEmpty)
                           TextButton(
                             onPressed: () {
                               // Navigate to full transactions screen
@@ -136,20 +170,29 @@ class _DashboardScreenState extends State<DashboardScreen> {
                     const SizedBox(height: 12),
 
                     // Transactions List
-                    if (transactions.isEmpty)
+                    if (allTransactions.isEmpty)
                       const Center(child: Text('No transactions yet'))
                     else
-                      ListView.separated(
-                        physics: const NeverScrollableScrollPhysics(),
-                        shrinkWrap: true,
-                        itemCount: transactions.length,
-                        separatorBuilder: (context, index) =>
-                            const SizedBox(height: 8),
-                        itemBuilder: (context, index) {
-                          final transaction = transactions[index];
-                          return _buildTransactionItem(transaction);
+                      Consumer<AccountProvider>(
+                        builder: (context, provider, child) {
+                          final allTransactions = [
+                            ...provider.sentPayments,
+                            ...provider.transactions
+                          ]..sort((a, b) => b.transactionDate.compareTo(a.transactionDate));
+
+                          return ListView.separated(
+                            physics: const NeverScrollableScrollPhysics(),
+                            shrinkWrap: true,
+                            itemCount: allTransactions.length,
+                            separatorBuilder: (context, index) => const SizedBox(height: 8),
+                            itemBuilder: (context, index) {
+                              final transaction = allTransactions[index];
+                              return _buildTransactionItem(transaction);
+                            },
+                          );
                         },
                       ),
+
                   ],
                 ),
               ),
@@ -280,10 +323,15 @@ class _DashboardScreenState extends State<DashboardScreen> {
                 fontWeight: FontWeight.bold,
               ),
             ),
-            if (isExpense) Text(
-              '${provider.sentPayments.length} transactions',
-              style: const TextStyle(fontSize: 12),
+            if (isExpense) Consumer<AccountProvider>(
+              builder: (context, provider, child) {
+                return Text(
+                  '${provider.sentPayments.length} transactions',
+                  style: const TextStyle(fontSize: 12),
+                );
+              },
             ),
+
           ],
         ),
       ),

@@ -42,7 +42,6 @@ class ApiService {
     print(response.body);
 
     final Map<String, dynamic> data = jsonDecode(response.body);
-
     if (data['code'] == '00' || data['status'] == '200 OK') {
       final balance = data['data']['balanceAmount'];
       return balance is int ? balance : int.tryParse(balance.toString()) ?? 0;
@@ -116,7 +115,6 @@ class ApiService {
       double amount,
       String reference,
       String authToken,
-   // You'll need to pass the auth token
       ) async {
     try {
       final response = await http.post(
