@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../services/account_provider.dart';
+import '../widget/u_app_bar.dart';
 
 class SendPaymentScreen extends StatefulWidget {
   const SendPaymentScreen({super.key});
@@ -13,6 +14,8 @@ class _SendPaymentScreenState extends State<SendPaymentScreen> {
   final _formKey = GlobalKey<FormState>();
   final _amountController = TextEditingController();
   final _narrationController = TextEditingController();
+  final _recipientController = TextEditingController();
+
 
   bool _isSending = false;
 
@@ -26,14 +29,15 @@ class _SendPaymentScreenState extends State<SendPaymentScreen> {
     try {
       final amount = double.parse(_amountController.text.trim());
       final narration = _narrationController.text.trim();
+      final recipientAccount = _recipientController.text.trim();
 
-      await provider.sendPayment(amount, narration, ' ');
+      await provider.sendPayment(amount, narration, recipientAccount);
 
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Payment sent successfully')),
       );
 
-      Navigator.pop(context, true); // ✅ Return true to trigger dashboard refresh
+      Navigator.pop(context, true);
     } catch (e) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text('Error: $e')),
@@ -46,7 +50,7 @@ class _SendPaymentScreenState extends State<SendPaymentScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('Send Payment')),
+      appBar: UAppBar(title:  Text('Send Payment')),
       body: Padding(
         padding: const EdgeInsets.all(16),
         child: Form(
@@ -67,6 +71,17 @@ class _SendPaymentScreenState extends State<SendPaymentScreen> {
                   return null;
                 },
               ),
+              const SizedBox(height: 16),
+              TextFormField(
+                controller: _recipientController,
+                decoration: const InputDecoration(
+                  labelText: 'Recipient Account Number',
+                  border: OutlineInputBorder(),
+                ),
+                validator: (value) =>
+                value == null || value.isEmpty ? 'Enter recipient account number' : null,
+              ),
+              const SizedBox(height: 16),
               const SizedBox(height: 16),
               TextFormField(
                 controller: _narrationController,

@@ -7,6 +7,7 @@ import '../themes/theme_provider.dart';
 import '../services/auth_provider.dart';
 import '../widget/app_button.dart';
 import '../widget/input_field.dart';
+import '../widget/u_app_bar.dart';
 
 class LoginScreen extends StatelessWidget {
   final TextEditingController emailController = TextEditingController();
@@ -33,21 +34,7 @@ class LoginScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('Login'),
-        actions: [
-          Consumer<ThemeProvider>(
-            builder: (context, themeProvider, child) {
-              return IconButton(
-                icon: Icon(themeProvider.isDarkMode
-                    ? Icons.light_mode
-                    : Icons.dark_mode),
-                onPressed: () {
-                  themeProvider.toggleTheme(!themeProvider.isDarkMode);
-                },
-              );
-            },
-          ),
-        ],
+      appBar: UAppBar(title: Text('Login'),
       ),
       body: Padding(
         padding: const EdgeInsets.all(16),
