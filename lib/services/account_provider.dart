@@ -8,35 +8,39 @@ import '../storage/save_account.dart';
 import 'api_service.dart';
 import '../view/dashboard_screen.dart';
 
+/// State enum for provider
+enum ProviderState { idle, loading, success, error }
+
 class AccountProvider with ChangeNotifier {
-  bool isLoading = false;
+  /// -------- STATE --------
+  ProviderState state = ProviderState.idle;
+  String? errorMessage;
+
   VirtualAccountResponse? accountResponse;
   BalanceResponse? balanceResponse;
-  String? error;
-  double walletBalance = 10000;
-  bool loading = false;
+
+  double walletBalance = 0.0;
+  List<TransactionItem> _transactions = [];
+  List<TransactionItem> _sentPayments = [];
+  List<Map<String, dynamic>> createdAccounts = [];
+
   bool hasFetchedWalletBalance = false;
   bool hasFetchedTransaction = false;
-  List<Map<String, dynamic>> createdAccounts = [];
-  List<TransactionItem> _transactions = [];
-  List<TransactionItem> get transactions => _transactions;
-  List<TransactionItem> _sentPayments = [];
-  List<TransactionItem> get sentPayments => _sentPayments;
   bool _isInitialized = false;
-  double get totalIncome {
-    return _sentPayments
-        .where((t) => t.transactionType == 'credit')
-        .fold(0, (sum, t) => sum + t.amount);
-  }
 
-  double get totalExpenses {
-    return _sentPayments
-        .where((t) => t.transactionType == 'debit')
-        .fold(0, (sum, t) => sum + t.amount);
-  }
+  List<TransactionItem> get transactions => _transactions;
+  List<TransactionItem> get sentPayments => _sentPayments;
+  List<TransactionItem> get allTransactions =>
+      [..._transactions, ..._sentPayments];
 
-  List<TransactionItem> get allTransactions => _sentPayments;
+  /// -------- CALCULATED VALUES --------
+  double get totalIncome => allTransactions
+      .where((t) => t.transactionType == 'credit')
+      .fold(0, (sum, t) => sum + t.amount);
 
+  double get totalExpenses => allTransactions
+      .where((t) => t.transactionType == 'debit')
+      .fold(0, (sum, t) => sum + t.amount);
 
   AccountProvider() {
     _initialize();
@@ -50,29 +54,149 @@ class AccountProvider with ChangeNotifier {
     _isInitialized = true;
   }
 
-  Future<void> recordSentPayment(TransactionItem payment) async {
-    _sentPayments.add(payment);
-    await updateBalance(payment.amount);
-    walletBalance -= payment.amount;
-    notifyListeners();
-
-    // Save to shared preferences for persistence
-    final prefs = await SharedPreferences.getInstance();
-    await prefs.setDouble('balance', walletBalance);
-    final paymentsJson = _sentPayments.map((p) => p.toJson()).toList();
-    await prefs.setString('sent_payments', jsonEncode(paymentsJson));
+  /// -------- STATE HELPERS --------
+  void _setState(ProviderState newState, {String? error}) {
+    state = newState;
+    errorMessage = error;
     notifyListeners();
   }
 
-  Future<void> loadSentPayments() async {
-    final prefs = await SharedPreferences.getInstance();
-    final paymentsJson = prefs.getString('sent_payments');
-    if (paymentsJson != null) {
-      _sentPayments = (jsonDecode(paymentsJson) as List)
-          .map((json) => TransactionItem.fromJson(json))
-          .toList();
-      notifyListeners();
+  bool get isLoading => state == ProviderState.loading;
+  bool get hasError => state == ProviderState.error;
+
+  /// -------- CREATE ACCOUNT --------
+  Future<void> createVirtualAccount(Map<String, dynamic> payload, BuildContext context) async {
+    _setState(ProviderState.loading);
+    try {
+      final result = await ApiService.createVirtualAccount(payload);
+      accountResponse = VirtualAccountResponse.fromJson(result);
+
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.setString('accountResponse', jsonEncode(result));
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Account created successfully!')),
+      );
+
+      Navigator.pushReplacement(
+        context,
+        MaterialPageRoute(builder: (_) => const DashboardScreen()),
+      );
+
+      _setState(ProviderState.success);
+    } catch (e) {
+      _setState(ProviderState.error, error: e.toString());
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Error: ${e.toString()}')),
+      );
     }
+  }
+
+  /// -------- PAYMENTS --------
+  Future<String> sendPayment(double amount, String narration, String recipientAccount) async {
+    _setState(ProviderState.loading);
+
+    try {
+      if (accountResponse == null) {
+        _setState(ProviderState.error, error: 'Account not created');
+        return 'no_account';
+      }
+
+      if (amount <= 100) {
+        _setState(ProviderState.error, error: 'Invalid amount');
+        return 'invalid_amount';
+      }
+
+      if (walletBalance < amount) {
+        _setState(ProviderState.error, error: 'Insufficient funds');
+        return 'insufficient';
+      }
+
+      final response = await ApiService.sendPayment(
+        amount: amount,
+        narration: narration,
+        recipientAccount: recipientAccount,
+      );
+
+      if (response['code'] == '00') {
+        walletBalance -= amount;
+
+        final transaction = TransactionItem(
+          accountNumber: await getAccountName() ?? 'N/A',
+          destinationAccountNumber: recipientAccount,
+          amount: amount,
+          balance: walletBalance,
+          narration: narration,
+          transactionDate: DateTime.now(),
+          transactionRef: response['transactionRef'] ??
+              'TXN_${DateTime.now().millisecondsSinceEpoch}',
+          transactionType: 'debit',
+        );
+
+        await recordSentPayment(transaction);
+
+        _setState(ProviderState.success);
+        return 'success';
+      } else {
+        _setState(ProviderState.error, error: response['description'] ?? 'Transaction failed');
+        return 'failed';
+      }
+    } catch (e) {
+      _setState(ProviderState.error, error: e.toString());
+      return 'error';
+    }
+  }
+
+  Future<void> recordSentPayment(TransactionItem payment) async {
+    _sentPayments.insert(0, payment); // newest first
+    await saveSentPayments(_sentPayments);
+    await _saveBalance();
+    notifyListeners();
+  }
+
+  Future<void> receivePayment(double amount, String narration, String senderAccount) async {
+    if (accountResponse == null) {
+      throw Exception('Please create an account first before receiving money');
+    }
+
+    walletBalance += amount;
+
+    final transaction = TransactionItem(
+      accountNumber: await getAccountName() ?? 'N/A',
+      destinationAccountNumber: accountResponse!.accountNumber,
+      amount: amount,
+      balance: walletBalance,
+      narration: narration,
+      transactionDate: DateTime.now(),
+      transactionRef: 'RCV_${DateTime.now().millisecondsSinceEpoch}',
+      transactionType: 'credit',
+    );
+
+    _transactions.insert(0, transaction);
+    await saveSentPayments([..._sentPayments, transaction]);
+    await _saveBalance();
+    notifyListeners();
+  }
+
+  /// -------- BALANCE --------
+  Future<void> fetchWalletBalance(BuildContext context, String key) async {
+    if (hasFetchedWalletBalance) return;
+    _setState(ProviderState.loading);
+    try {
+      final result = await ApiService.getWalletBalance(key);
+      walletBalance = result.data.balanceAmount;
+      await _saveBalance();
+
+      hasFetchedWalletBalance = true;
+      _setState(ProviderState.success);
+    } catch (e) {
+      _setState(ProviderState.error, error: 'Failed to fetch balance');
+    }
+  }
+
+  Future<void> _saveBalance() async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setDouble('balance', walletBalance);
   }
 
   Future<void> loadInitialBalance() async {
@@ -84,127 +208,37 @@ class AccountProvider with ChangeNotifier {
     }
   }
 
-  Future<void> receivePayment(double amount, String narration, String senderAccount) async {
-    if (accountResponse == null) {
-      throw Exception('Please create an account first before receiving money');
-    }
-
-    final transaction = TransactionItem(
-      accountNumber: await getAccountName() ?? 'N/A',
-      destinationAccountNumber: accountResponse!.accountNumber, // your account
-      amount: amount,
-      balance: walletBalance + amount,
-      narration: narration,
-      transactionDate: DateTime.now(),
-      transactionRef: 'RCV_${DateTime.now().millisecondsSinceEpoch}',
-      transactionType: 'credit', // incoming
-    );
-
-    _sentPayments.add(transaction);
-    walletBalance += amount.toInt();
-
-    await saveSentPayments(_sentPayments);
-    notifyListeners();
-  }
-
-  Future<void> recordIncomingPayment(TransactionItem payment) async {
-    _transactions.add(payment);
-    await updateBalance(payment.amount, isCredit: true);
-    notifyListeners();
-  }
-
-  Future<void> updateBalance(double amount, {bool isCredit = false}) async {
-    walletBalance = isCredit
-        ? walletBalance + amount
-        : walletBalance - amount;
-
-    final prefs = await SharedPreferences.getInstance();
-    await prefs.setDouble('balance', walletBalance);
-    notifyListeners();
-  }
-
-  Future<void> fetchWalletBalance(BuildContext context, String key) async {
-    if (loading || hasFetchedWalletBalance) return;
-
-    loading = true;
-    notifyListeners();
-
-    try {
-      final result = await ApiService.getWalletBalance(key);
-      walletBalance = result.data.balanceAmount;
-
-      final prefs = await SharedPreferences.getInstance();
-      await prefs.setDouble('balance', walletBalance);
-
-      hasFetchedWalletBalance = true;
-      debugPrint('Wallet balance: ₦$walletBalance');
-    } finally {
-      loading = false;
-      notifyListeners();
-    }
-  }
-
+  /// -------- TRANSACTIONS --------
   Future<void> fetchTransaction(BuildContext context) async {
-    if (loading || hasFetchedTransaction) return;
-    loading = true;
-    notifyListeners();
+    _setState(ProviderState.loading);
     try {
       final result = await ApiService.getTransactionDetails();
-      _transactions = result;
+      _transactions = result
+        ..sort((a, b) => b.transactionDate.compareTo(a.transactionDate));
 
-      for (final transaction in _transactions.where((t) => t.transactionType == 'credit')) {
-        await updateBalance(transaction.amount, isCredit: true);
-      }
+      await fetchWalletBalance(context, await getAccountName() ?? '');
 
-      _transactions = [...result, ..._sentPayments];
-      _transactions.sort((a, b) => b.transactionDate.compareTo(a.transactionDate));
       hasFetchedTransaction = true;
-
-      debugPrint("Transactions fetched: ${_transactions.length}");
+      _setState(ProviderState.success);
     } catch (e) {
-      debugPrint('Fetch transaction error: $e');
-      error = 'Failed to fetch transactions';
-    } finally {
-      loading = false;
-      notifyListeners();
+      _setState(ProviderState.error, error: 'Failed to fetch transactions');
     }
   }
 
-  Future<void> createVirtualAccount(Map<String, dynamic> payload, BuildContext context) async {
+  /// -------- PERSISTENCE --------
+  Future<void> saveSentPayments(List<TransactionItem> payments) async {
+    final prefs = await SharedPreferences.getInstance();
+    final jsonList = payments.map((e) => e.toJson()).toList();
+    await prefs.setString('sent_payments', jsonEncode(jsonList));
+  }
 
-
-    try {
-      isLoading = true;
-      error = null;
-      notifyListeners();
-      final result = await ApiService.createVirtualAccount(payload);
-      if (result['status'] == '200 OK') {
-        accountResponse = VirtualAccountResponse.fromJson(result);
-        final accountName = accountResponse?.accountNumber;
-        final prefs = await SharedPreferences.getInstance();
-        await prefs.setString('accountResponse', jsonEncode(accountResponse?.toJson()));
-        await prefs.setString('accountName', accountName ?? '');
-
-        debugPrint('Account number saved: $accountName');
-
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Account created successfully!')),
-        );
-
-        Navigator.pushReplacement(
-          context,
-          MaterialPageRoute(builder: (_) => const DashboardScreen()),
-        );
-      }
-    } catch (e) {
-      error = 'Error: ${e.toString()}';
-      if (!(e.toString().contains('200'))) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Error: ${e.toString()}')),
-        );
-      }
-    } finally {
-      isLoading = false;
+  Future<void> loadSentPayments() async {
+    final prefs = await SharedPreferences.getInstance();
+    final paymentsJson = prefs.getString('sent_payments');
+    if (paymentsJson != null) {
+      _sentPayments = (jsonDecode(paymentsJson) as List)
+          .map((json) => TransactionItem.fromJson(json))
+          .toList();
       notifyListeners();
     }
   }
@@ -220,29 +254,6 @@ class AccountProvider with ChangeNotifier {
 
   void addCreatedAccount(Map<String, dynamic> account) {
     createdAccounts.add(account);
-    notifyListeners();
-  }
-
-  Future<void> sendPayment(double amount, String narration, String recipientAccount) async {
-    if (accountResponse == null) {
-      // No account created
-      throw Exception('Please create an account first before sending money');
-    }
-    final transaction = TransactionItem(
-      accountNumber: await getAccountName() ?? 'N/A',
-      destinationAccountNumber: recipientAccount,
-      amount: amount,
-      balance: walletBalance - amount,
-      narration: narration,
-      transactionDate: DateTime.now(),
-      transactionRef: 'TXN_${DateTime.now().millisecondsSinceEpoch}',
-      transactionType: 'debit',
-    );
-
-    _sentPayments.add(transaction);
-    walletBalance -= amount.toInt();
-
-    await saveSentPayments(_sentPayments);
     notifyListeners();
   }
 }

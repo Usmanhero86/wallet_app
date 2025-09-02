@@ -40,12 +40,12 @@ class LoginScreen extends StatelessWidget {
         padding: const EdgeInsets.all(16),
         child: Column(
           children: [
-            CustomTextFormField(
+            InputField(
               controller: emailController,
               labelText: 'Email',
             ),
             const SizedBox(height: 16),
-            CustomTextFormField(
+            InputField(
               controller: passwordController,
               labelText: 'Password',
               obscureText: true,

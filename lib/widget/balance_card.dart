@@ -25,7 +25,7 @@ class BalanceCard extends StatelessWidget {
             ),
             const SizedBox(height: 10),
             Text(
-              '\$${balance.toStringAsFixed(2)}',
+              '₦${balance.toStringAsFixed(2)}',
               style: Theme.of(context).textTheme.headlineMedium?.copyWith(
                 fontWeight: FontWeight.bold,
                 color: Theme.of(context).primaryColor,

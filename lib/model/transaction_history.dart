@@ -16,10 +16,9 @@ class TransactionHistoryResponse {
       code: json['code'] ?? '',
       description: json['description'] ?? '',
       status: json['status'] ?? '',
-      data: (json['data'] as List<dynamic>?)
-          ?.map((item) => TransactionItem.fromJson(item))
-          .toList() ??
-          [],
+      data: (json['data'] as List<dynamic>? ?? [])
+          .map((item) => TransactionItem.fromJson(item))
+          .toList(),
     );
   }
 }
@@ -44,6 +43,24 @@ class TransactionItem {
     required this.transactionRef,
     required this.transactionType,
   });
+
+  factory TransactionItem.fromJson(Map<String, dynamic> json) {
+    return TransactionItem(
+      accountNumber: json['accountNumber'] ?? '',
+      destinationAccountNumber: json['destinationAccountNumber'] ?? '',
+      amount: (json['amount'] is String)
+          ? double.tryParse(json['amount']) ?? 0
+          : (json['amount'] ?? 0).toDouble(),
+      balance: (json['balance'] is String)
+          ? double.tryParse(json['balance']) ?? 0
+          : (json['balance'] ?? 0).toDouble(),
+      narration: json['narration'] ?? '',
+      transactionDate: DateTime.tryParse(json['transactionDate'] ?? '') ?? DateTime.now(),
+      transactionRef: json['transactionRef'] ?? '',
+      transactionType: json['transactionType'] ?? '',
+    );
+  }
+
   Map<String, dynamic> toJson() {
     return {
       'accountNumber': accountNumber,
@@ -55,17 +72,5 @@ class TransactionItem {
       'transactionRef': transactionRef,
       'transactionType': transactionType,
     };
-  }
-  factory TransactionItem.fromJson(Map<String, dynamic> json) {
-    return TransactionItem(
-      accountNumber: json['accountNumber'] ?? '',
-      destinationAccountNumber: json['destinationAccountNumber'] ?? '',
-      amount: json['amount'] ?? 0,
-      balance: json['balance'] ?? 0,
-      narration: json['narration'] ?? '',
-      transactionDate: DateTime.parse(json['transactionDate'] ?? DateTime.now().toIso8601String()),
-      transactionRef: json['transactionRef'] ?? '',
-      transactionType: json['transactionType'] ?? '',
-    );
   }
 }

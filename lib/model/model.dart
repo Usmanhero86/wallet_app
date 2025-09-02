@@ -18,20 +18,12 @@ class VirtualAccountResponse {
   factory VirtualAccountResponse.fromJson(Map<String, dynamic> json) {
     final data = json['data'] ?? {};
     return VirtualAccountResponse(
-      code: json['code'],
-      description: json['description'],
-      status: json['status'],
+      code: json['code'] ?? '',
+      description: json['description'] ?? '',
+      status: json['status'] ?? '',
       bankName: data['bankName'] ?? '',
       accountName: data['accountName'] ?? '',
       accountNumber: data['accountNumber'] ?? '',
     );
   }
-  Map<String, dynamic> toJson() {
-    return {
-      'accountName': accountName,
-      'accountNumber': accountNumber,
-      'bankName': bankName,
-    };
-  }
-
 }

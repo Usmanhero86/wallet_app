@@ -5,146 +5,193 @@ import '../model/balance_response.dart';
 import '../model/transaction_history.dart';
 import '../storage/save_account.dart';
 
-
-
 class ApiService {
   static const baseUrl = 'https://sandbox.zainpay.ng';
-  static const secretKey = 'ckI3l5rJ9UvymbTl6FBCGmL04IHrgs9QNiLB2M0hpjV7O';
-  String authToken =   'Bearer eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJpc3MiOiJodHRwczovL3phaW5wYXkubmciLCJpYXQiOjE2OTIzNTcxMzEsImlkIjpmZDMxODYxNy00MGQyLTQzZGYtYTJjMi0wNTIwNGQ1NDM1YmQsIm5hbWUiOmhhdXdhLmRhbGhhdHVAaG90bWFpbC5jb20sInJvbGUiOmhhdXdhLmRhbGhhdHVAaG90bWFpbC5jb20sInNlY3JldEtleSI6Y2tJM2w1cko5VXZ5bWJUbDZGQkNHbUwwNElIcmdzOVFOaUxCMk0waHBqVjdPfQ.BhLQzwEzMGs2fNj1As12i3zhl9w0M66mOo-kDPGwrUM';
+  static const _authToken =
+      'Bearer eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJpc3MiOiJodHRwczovL3phaW5wYXkubmciLCJpYXQiOjE2OTIzNTcxMzEsImlkIjpmZDMxODYxNy00MGQyLTQzZGYtYTJjMi0wNTIwNGQ1NDM1YmQsIm5hbWUiOmhhdXdhLmRhbGhhdHVAaG90bWFpbC5jb20sInJvbGUiOmhhdXdhLmRhbGhhdHVAaG90bWFpbC5jb20sInNlY3JldEtleSI6Y2tJM2w1cko5VXZ5bWJUbDZGQkNHbUwwNElIcmdzOVFOaUxCMk0waHBqVjdPfQ.BhLQzwEzMGs2fNj1As12i3zhl9w0M66mOo-kDPGwrUM';
 
-  // Add CREATE VIRTUAL ACCOUNT method
+  // ---------------- CREATE VIRTUAL ACCOUNT ----------------
   static Future<Map<String, dynamic>> createVirtualAccount(Map<String, dynamic> payload) async {
-    final url = Uri.parse('https://sandbox.zainpay.ng/virtual-account/create/request');
-    print('Sending payload: $payload');
-    final response = await http.post(
-      url,
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': 'Bearer eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJpc3MiOiJodHRwczovL3phaW5wYXkubmciLCJpYXQiOjE2OTIzNTcxMzEsImlkIjpmZDMxODYxNy00MGQyLTQzZGYtYTJjMi0wNTIwNGQ1NDM1YmQsIm5hbWUiOmhhdXdhLmRhbGhhdHVAaG90bWFpbC5jb20sInJvbGUiOmhhdXdhLmRhbGhhdHVAaG90bWFpbC5jb20sInNlY3JldEtleSI6Y2tJM2w1cko5VXZ5bWJUbDZGQkNHbUwwNElIcmdzOVFOaUxCMk0waHBqVjdPfQ.BhLQzwEzMGs2fNj1As12i3zhl9w0M66mOo-kDPGwrUM',
-      },
-      body: jsonEncode(payload),
-    );
-    print(response.body);
-    return jsonDecode(response.body);
-  }
+    try {
+      final url =
+      Uri.parse('$baseUrl/virtual-account/create/request');
 
-// Add GET WALLET BALANCE method
-  static Future<BalanceResponse> getWalletBalance(String key) async {
-    // final key = await getAccountName();
-    final url = Uri.parse('https://sandbox.zainpay.ng/virtual-account/wallet/balance/$key');
-    final response = await http.get(
-      url,
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': 'Bearer eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJpc3MiOiJodHRwczovL3phaW5wYXkubmciLCJpYXQiOjE2OTIzNTcxMzEsImlkIjpmZDMxODYxNy00MGQyLTQzZGYtYTJjMi0wNTIwNGQ1NDM1YmQsIm5hbWUiOmhhdXdhLmRhbGhhdHVAaG90bWFpbC5jb20sInJvbGUiOmhhdXdhLmRhbGhhdHVAaG90bWFpbC5jb20sInNlY3JldEtleSI6Y2tJM2w1cko5VXZ5bWJUbDZGQkNHbUwwNElIcmdzOVFOaUxCMk0waHBqVjdPfQ.BhLQzwEzMGs2fNj1As12i3zhl9w0M66mOo-kDPGwrUM',
-      },
-    );
-    print(response.body);
-    final Map<String, dynamic> data = jsonDecode(response.body);
-    if (data['code'] == '00' || data['status'] == '200 OK') {
-      final balance = data['data']['balanceAmount'];
-      return BalanceResponse.fromJson(balance);
-    } else {
-      throw Exception('Failed to fetch wallet balance: ${data['description']}');
+      final response = await http.post(
+        url,
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': _authToken,
+        },
+        body: jsonEncode(payload),
+      );
+
+      final data = jsonDecode(response.body);
+
+      if (response.statusCode == 200 && data['code'] == '00') {
+        return data;
+      } else {
+        throw PlatformException(
+          code: 'ACCOUNT_CREATION_FAILED',
+          message: data['description'] ?? 'Failed to create account',
+        );
+      }
+    } catch (e) {
+      throw PlatformException(
+        code: 'ACCOUNT_ERROR',
+        message: 'Error creating virtual account: ${e.toString()}',
+      );
     }
   }
 
-  // Add login method
+  // ---------------- GET WALLET BALANCE ----------------
+  static Future<BalanceResponse> getWalletBalance(String key) async {
+    try {
+      final url =
+      Uri.parse('$baseUrl/virtual-account/wallet/balance/$key');
+
+      final response = await http.get(
+        url,
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': _authToken,
+        },
+      );
+
+      final data = jsonDecode(response.body);
+
+      if (response.statusCode == 200 && data['code'] == '00') {
+        return BalanceResponse.fromJson(data['data']);
+      } else {
+        throw PlatformException(
+          code: 'BALANCE_ERROR',
+          message: data['description'] ?? 'Failed to fetch wallet balance',
+        );
+      }
+    } catch (e) {
+      throw PlatformException(
+        code: 'BALANCE_EXCEPTION',
+        message: 'Error fetching balance: ${e.toString()}',
+      );
+    }
+  }
+
+  // ---------------- LOGIN ----------------
   static Future<Map<String, dynamic>> login(String email, String password) async {
     try {
       final response = await http.post(
         Uri.parse('$baseUrl/auth/login'),
         headers: {'Content-Type': 'application/json'},
-        body: jsonEncode({
-          'email': email,
-          'password': password,
-        }),
+        body: jsonEncode({'email': email, 'password': password}),
       );
 
-      final responseData = jsonDecode(response.body);
+      final data = jsonDecode(response.body);
 
       if (response.statusCode == 200) {
         return {
           'success': true,
-          'token': responseData['token'],
-          'user': responseData['user'],
+          'token': data['token'],
+          'user': data['user'],
         };
       } else {
         throw PlatformException(
           code: 'LOGIN_FAILED',
-          message: responseData['message'] ?? 'Login failed',
+          message: data['message'] ?? 'Invalid email or password',
         );
       }
     } catch (e) {
       throw PlatformException(
         code: 'LOGIN_ERROR',
-        message: 'Failed to login: ${e.toString()}',
+        message: 'Error logging in: ${e.toString()}',
       );
     }
   }
 
-// Add GET TRANSACTION DETAILS method
+  // ---------------- GET TRANSACTION DETAILS ----------------
   static Future<List<TransactionItem>> getTransactionDetails() async {
-    final key = await getAccountName();
-    final url = Uri.parse('https://sandbox.zainpay.ng/virtual-account/wallet/transactions/$key');
+    try {
+      final key = await getAccountName();
+      final url =
+      Uri.parse('$baseUrl/virtual-account/wallet/transactions/$key');
+
+      final response = await http.get(
+        url,
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': _authToken,
+        },
+      );
+
+      final data = jsonDecode(response.body);
+
+      if (response.statusCode == 200 && data['code'] == '00') {
+        final List<dynamic> rawList = data['data'];
+        return rawList
+            .map((item) => TransactionItem.fromJson(item))
+            .toList();
+      } else {
+        throw PlatformException(
+          code: 'TRANSACTION_FAILED',
+          message: data['description'] ?? 'Failed to fetch transactions',
+        );
+      }
+    } catch (e) {
+      throw PlatformException(
+        code: 'TRANSACTION_ERROR',
+        message: 'Error fetching transactions: ${e.toString()}',
+      );
+    }
+  }
+
+  // ---------------- SEND PAYMENT ----------------
+  static Future<Map<String, dynamic>> sendPayment({required double amount, required String narration, required String recipientAccount,}) async {
+    final url = Uri.parse('$baseUrl/payments/transfer');
+
+    final body = {
+      'amount': amount,
+      'narration': narration,
+      'recipientAccount': recipientAccount,
+    };
+
+    final response = await http.post(
+      url,
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': 'Bearer $_authToken',
+      },
+      body: jsonEncode(body),
+    );
+
+    if (response.statusCode == 200) {
+      return jsonDecode(response.body);
+    } else {
+      throw Exception('Payment failed: ${response.body}');
+    }
+  }
+
+  // ---------------- RECEIVE PAYMENT ----------------
+  static Future<List<Map<String, dynamic>>> receivePayments() async {
+    final url = Uri.parse('$baseUrl/payments/transactions'); // adjust to actual endpoint
 
     final response = await http.get(
       url,
       headers: {
         'Content-Type': 'application/json',
-        'Authorization': 'Bearer eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJpc3MiOiJodHRwczovL3phaW5wYXkubmciLCJpYXQiOjE2OTIzNTcxMzEsImlkIjpmZDMxODYxNy00MGQyLTQzZGYtYTJjMi0wNTIwNGQ1NDM1YmQsIm5hbWUiOmhhdXdhLmRhbGhhdHVAaG90bWFpbC5jb20sInJvbGUiOmhhdXdhLmRhbGhhdHVAaG90bWFpbC5jb20sInNlY3JldEtleSI6Y2tJM2w1cko5VXZ5bWJUbDZGQkNHbUwwNElIcmdzOVFOaUxCMk0waHBqVjdPfQ.BhLQzwEzMGs2fNj1As12i3zhl9w0M66mOo-kDPGwrUM',
+        'Authorization': 'Bearer $_authToken', // use your real auth
       },
     );
 
-    print(response.body);
+    if (response.statusCode == 200) {
+      final data = jsonDecode(response.body);
 
-    final Map<String, dynamic> data = jsonDecode(response.body);
+      // assume API returns { "data": [ {...}, {...} ] }
+      final List transactions = data['data'] ?? [];
 
-    if (data['code'] == '00' || data['status'] == '200 OK') {
-      final List<dynamic> rawList = data['data'];
-      return rawList.map((item) => TransactionItem.fromJson(item)).toList();
+      return transactions.cast<Map<String, dynamic>>();
     } else {
-      throw Exception('Failed to fetch transactions: ${data['description']}');
-    }
-  }
-
-// Add SEND PAYMENT method
-  static Future<Map<String, dynamic>> sendPayment(String recipientAccount, double amount, String reference, String authToken,) async {
-    try {
-      final response = await http.post(
-        Uri.parse('$baseUrl/payments/send'),
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': 'Bearer $authToken',
-        },
-        body: jsonEncode({
-          'recipient_account': recipientAccount,
-          'amount': amount,
-          'reference': reference,
-        }),
-      );
-
-      final responseData = jsonDecode(response.body);
-
-      if (response.statusCode == 200) {
-        return {
-          'success': true,
-          'message': 'Payment sent successfully',
-          'data': responseData,
-        };
-      } else {
-        throw PlatformException(
-          code: 'API_ERROR',
-          message: responseData['message'] ?? 'Failed to send payment',
-        );
-      }
-    } on PlatformException catch (e) {
-      rethrow;
-    } catch (e) {
-      throw PlatformException(
-        code: 'UNKNOWN_ERROR',
-        message: 'An unexpected error occurred',
+      throw Exception(
+        'Failed to fetch received payments: ${response.statusCode} → ${response.body}',
       );
     }
   }
+
 }

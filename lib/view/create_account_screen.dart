@@ -155,61 +155,61 @@ class _CreateAccountScreenState extends State<CreateAccountScreen> {
                   },
                 ),
               ),
-              CustomTextFormField(
+              InputField(
                 controller: _firstName,
                 labelText: 'First Name',
                 validator: (value) =>
                 value!.isEmpty ? 'Required' : null,
               ),
-              CustomTextFormField(
+              InputField(
                 controller: _surname,
                 labelText: 'Surname',
                 validator: (value) =>
                 value!.isEmpty ? 'Required' : null,
               ),
-              CustomTextFormField(
+              InputField(
                 controller: _mobile,
                 labelText: 'Mobile Number',
                 validator: (value) =>
                 value!.isEmpty ? 'Required' : null,
               ),
-              CustomTextFormField(
+              InputField(
                 controller: _bvn,
                 labelText: 'BVN',
                 validator: (value) =>
                 value!.isEmpty ? 'Required' : null,
               ),
-              CustomTextFormField(
+              InputField(
                 controller: _email,
                 labelText: 'Email',
                 validator: (value) =>
                 value!.isEmpty ? 'Required' : null,
               ),
-              CustomTextFormField(
+              InputField(
                 controller: dob,
                 labelText: 'Date of Birth',
                 validator: (value) =>
                 value!.isEmpty ? 'Required' : null,
               ),
-              CustomTextFormField(
+              InputField(
                 controller: title,
                 labelText: 'Title',
                 validator: (value) =>
                 value!.isEmpty ? 'Required' : null,
               ),
-              CustomTextFormField(
+              InputField(
                 controller: address,
                 labelText: 'Address',
                 validator: (value) =>
                 value!.isEmpty ? 'Required' : null,
               ),
-              CustomTextFormField(
+              InputField(
                 controller: gender,
                 labelText: 'Gender',
                 validator: (value) =>
                 value!.isEmpty ? 'Required' : null,
               ),
-              CustomTextFormField(
+              InputField(
                 controller: state,
                 labelText: 'State',
                 validator: (value) =>
@@ -234,8 +234,8 @@ class _CreateAccountScreenState extends State<CreateAccountScreen> {
                   ),
                 ),
 
-              if (provider.error != null)
-                Text(provider.error!,
+              if (provider.errorMessage != null)
+                Text(provider.errorMessage!,
                     style: const TextStyle(color: Colors.red)),
             ],
           ),

@@ -19,45 +19,31 @@ class BalanceResponse {
       status: json['status'] ?? '',
     );
   }
-
-  Map<String, dynamic> toJson() {
-    return {
-      'code': code,
-      'data': data.toJson(),
-      'description': description,
-      'status': status,
-    };
-  }
 }
 
 class Data {
   final String accountName;
   final String accountNumber;
   final double balanceAmount;
-  final String transactionDate;
+  final DateTime? transactionDate;
 
   Data({
     required this.accountName,
     required this.accountNumber,
     required this.balanceAmount,
-    required this.transactionDate,
+    this.transactionDate,
   });
 
   factory Data.fromJson(Map<String, dynamic> json) {
     return Data(
       accountName: json['accountName'] ?? '',
       accountNumber: json['accountNumber'] ?? '',
-      balanceAmount: json['balanceAmount'] ?? 0,
-      transactionDate: json['transactionDate'] ?? '',
+      balanceAmount: (json['balanceAmount'] is String)
+          ? double.tryParse(json['balanceAmount']) ?? 0
+          : (json['balanceAmount'] ?? 0).toDouble(),
+      transactionDate: json['transactionDate'] != null && json['transactionDate'] != ''
+          ? DateTime.tryParse(json['transactionDate'])
+          : null,
     );
-  }
-
-  Map<String, dynamic> toJson() {
-    return {
-      'accountName': accountName,
-      'accountNumber': accountNumber,
-      'balanceAmount': balanceAmount,
-      'transactionDate': transactionDate,
-    };
   }
 }

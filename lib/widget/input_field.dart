@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 
-class CustomTextFormField extends StatelessWidget {
+class InputField extends StatelessWidget {
   final TextEditingController? controller;
   final String labelText;
   final String? hintText;
@@ -14,7 +14,7 @@ class CustomTextFormField extends StatelessWidget {
   final bool readOnly;
   final void Function()? onTap;
 
-  const CustomTextFormField({
+  const InputField({
     super.key,
     this.controller,
     required this.labelText,

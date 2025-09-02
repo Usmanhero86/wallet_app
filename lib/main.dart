@@ -17,7 +17,7 @@ void main() async{
     HttpOverrides.global = MyHttpOverrides();
   }
   final prefs = await SharedPreferences.getInstance();
-  final initialBalance = prefs.getInt('balance') ?? 00;
+  final balance = prefs.getDouble('balance') ?? 00;
   runApp(
     MultiProvider(
       providers: [

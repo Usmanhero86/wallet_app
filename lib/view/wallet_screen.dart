@@ -121,7 +121,6 @@ class _WalletScreenState extends State<WalletScreen> {
 
   Widget _buildTransactionItem(TransactionItem transaction) {
     final isCredit = transaction.transactionType == 'credit';
-
     return Card(
       margin: EdgeInsets.symmetric(horizontal: 16, vertical: 8),
       child: ListTile(
