@@ -33,7 +33,7 @@ class BalanceResponse {
 class Data {
   final String accountName;
   final String accountNumber;
-  final int balanceAmount;
+  final double balanceAmount;
   final String transactionDate;
 
   Data({

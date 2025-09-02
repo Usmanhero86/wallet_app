@@ -27,8 +27,8 @@ class TransactionHistoryResponse {
 class TransactionItem {
   final String accountNumber;
   final String destinationAccountNumber;
-  final int amount;
-  final int balance;
+  final double amount;
+  final double balance;
   final String narration;
   final DateTime transactionDate;
   final String transactionRef;
