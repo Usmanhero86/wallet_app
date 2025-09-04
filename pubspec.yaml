@@ -47,6 +47,7 @@ dependencies:
   provider:
   dio:
   fl_chart: ^1.0.0
+  flutter_riverpod: ^2.5.1
 
 
 dev_dependencies:
