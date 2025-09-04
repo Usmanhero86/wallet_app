@@ -1,6 +1,6 @@
 import 'dart:convert';
 import 'package:shared_preferences/shared_preferences.dart';
-import '../model/transaction_history.dart';
+import '../../../domain/entities/transaction_history.dart';
 
 Future<void> saveAccountName(String accountName) async {
   final prefs = await SharedPreferences.getInstance();

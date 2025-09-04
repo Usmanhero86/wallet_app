@@ -1,13 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import 'package:wallet_app/view/create_account_screen.dart';
-import 'package:wallet_app/view/dashboard_screen.dart';
-import '../services/api_service.dart';
-import '../themes/theme_provider.dart';
-import '../services/auth_provider.dart';
+import '../providers/auth_provider.dart';
 import '../widget/app_button.dart';
 import '../widget/input_field.dart';
 import '../widget/u_app_bar.dart';
+import 'dashboard_screen.dart';
 
 class LoginScreen extends StatelessWidget {
   final TextEditingController emailController = TextEditingController();
@@ -34,8 +31,7 @@ class LoginScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: UAppBar(title: Text('Login'),
-      ),
+      appBar: UAppBar(title: Text('Login')),
       body: Padding(
         padding: const EdgeInsets.all(16),
         child: Column(
@@ -52,7 +48,9 @@ class LoginScreen extends StatelessWidget {
             ),
             const SizedBox(height: 20),
             AppButton(
-              onPressed: () => _login(context),
+              onPressed: () => Navigator.push(
+                  context, MaterialPageRoute(
+                  builder: (context)=>DashboardScreen())),
               text: 'Login',
             ),
           ],

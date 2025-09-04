@@ -1,31 +1,30 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:get_storage/get_storage.dart';
-import 'package:provider/provider.dart';
-import '../themes/theme_provider.dart';
-import '../services/account_provider.dart';
+import '../../di/providers.dart';
 import '../widget/app_button.dart';
 import '../widget/input_field.dart';
 import '../widget/u_app_bar.dart';
+import 'dashboard_screen.dart';
 
-class CreateAccountScreen extends StatefulWidget {
+class CreateAccountScreen extends ConsumerStatefulWidget {
   const CreateAccountScreen({super.key});
 
   @override
-  State<CreateAccountScreen> createState() => _CreateAccountScreenState();
+  ConsumerState<CreateAccountScreen> createState() => _CreateAccountScreenState();
 }
-
-class _CreateAccountScreenState extends State<CreateAccountScreen> {
+class _CreateAccountScreenState extends ConsumerState<CreateAccountScreen> {
   final _formKey = GlobalKey<FormState>();
   final _firstName = TextEditingController();
   final _surname = TextEditingController();
   final _email = TextEditingController();
   final _mobile = TextEditingController();
   final _bvn = TextEditingController();
-  final address = TextEditingController();
-  final title = TextEditingController();
-  final dob = TextEditingController();
-  final state = TextEditingController();
-  final gender = TextEditingController();
+  final _address = TextEditingController();
+  final _title = TextEditingController();
+  final _dob = TextEditingController();
+  final _state = TextEditingController();
+  final _gender = TextEditingController();
   final storage = GetStorage();
 
   final List<String> _banks = ['Select Bank', 'fcmb', 'fidelity', 'GTBank'];
@@ -38,11 +37,11 @@ class _CreateAccountScreenState extends State<CreateAccountScreen> {
     _email.dispose();
     _mobile.dispose();
     _bvn.dispose();
-    gender.dispose();
-    dob.dispose();
-    address.dispose();
-    state.dispose();
-    title.dispose();
+    _gender.dispose();
+    _dob.dispose();
+    _address.dispose();
+    _state.dispose();
+    _title.dispose();
     super.dispose();
   }
 
@@ -55,50 +54,50 @@ class _CreateAccountScreenState extends State<CreateAccountScreen> {
         return;
       }
 
-      final provider = Provider.of<AccountProvider>(context, listen: false);
+      final notifier = ref.read(accountNotifierProvider.notifier);
       final payload = {
         "bankType": _selectedBank,
         "firstName": _firstName.text,
         "surname": _surname.text,
         "email": _email.text,
         "mobileNumber": _mobile.text,
-        "dob": dob.text,
-        "gender": gender.text,
-        "address": address.text,
-        "title": title.text,
-        "state": state.text,
+        "dob": _dob.text,
+        "gender": _gender.text,
+        "address": _address.text,
+        "title": _title.text,
+        "state": _state.text,
         "bvn": _bvn.text,
         "zainboxCode": "EXM_p5GDESXZzc0JKbB50DNS",
       };
 
-      await provider.createVirtualAccount(payload, context);
+      final result = await notifier.createVirtualAccount(payload);
 
-      if (provider.accountResponse != null) {
-        // Save account info locally
-        storage.write("account", {
-          "accountNumber": provider.accountResponse!.accountNumber,
-          "accountName": provider.accountResponse!.accountName,
-          "bankType": _selectedBank,
-        });
+      if (!mounted) return;
 
-        // ✅ Clear form after success
-        _formKey.currentState?.reset();
-        setState(() {
-          _selectedBank = 'Select Bank';
-        });
-        _firstName.clear();
-        _surname.clear();
-        _email.clear();
-        _mobile.clear();
-        _bvn.clear();
-        gender.clear();
-        dob.clear();
-        address.clear();
-        state.clear();
-        title.clear();
+      if (result == "success") {
+        final account = ref.read(accountNotifierProvider).accountResponse;
 
+        if (account != null) {
+          // ✅ Save locally
+          storage.write("account", {
+            "accountNumber": account.accountNumber,
+            "accountName": account.accountName,
+            "bankType": _selectedBank,
+          });
+
+          // ✅ Navigate instantly to dashboard & pass account details
+          Navigator.pushReplacement(
+            context,
+            MaterialPageRoute(
+              builder: (_) => DashboardScreen(),
+            ),
+          );
+        }
+      } else {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text("Account created successfully!")),
+          SnackBar(
+            content: Text(result == "error" ? "Account creation failed" : result),
+          ),
         );
       }
     }
@@ -106,22 +105,19 @@ class _CreateAccountScreenState extends State<CreateAccountScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final provider = Provider.of<AccountProvider>(context);
+    final state = ref.watch(accountNotifierProvider);
     final savedAccount = storage.read("account");
 
     return Scaffold(
-      appBar: UAppBar(
-        title: const Text("Create Virtual Account"),
-      ),
+      appBar: UAppBar(title: const Text("Create Virtual Account")),
       body: Padding(
         padding: const EdgeInsets.all(16.0),
-        child: provider.isLoading
+        child: state.isLoading
             ? const Center(child: CircularProgressIndicator())
             : Form(
           key: _formKey,
           child: ListView(
             children: [
-              // Bank Type Dropdown
               Padding(
                 padding: const EdgeInsets.all(8.0),
                 child: DropdownButtonFormField<String>(
@@ -143,9 +139,7 @@ class _CreateAccountScreenState extends State<CreateAccountScreen> {
                     );
                   }).toList(),
                   onChanged: (String? newValue) {
-                    setState(() {
-                      _selectedBank = newValue!;
-                    });
+                    setState(() => _selectedBank = newValue!);
                   },
                   validator: (value) {
                     if (value == null || value == 'Select Bank') {
@@ -186,31 +180,31 @@ class _CreateAccountScreenState extends State<CreateAccountScreen> {
                 value!.isEmpty ? 'Required' : null,
               ),
               InputField(
-                controller: dob,
+                controller: _dob,
                 labelText: 'Date of Birth',
                 validator: (value) =>
                 value!.isEmpty ? 'Required' : null,
               ),
               InputField(
-                controller: title,
+                controller: _title,
                 labelText: 'Title',
                 validator: (value) =>
                 value!.isEmpty ? 'Required' : null,
               ),
               InputField(
-                controller: address,
+                controller: _address,
                 labelText: 'Address',
                 validator: (value) =>
                 value!.isEmpty ? 'Required' : null,
               ),
               InputField(
-                controller: gender,
+                controller: _gender,
                 labelText: 'Gender',
                 validator: (value) =>
                 value!.isEmpty ? 'Required' : null,
               ),
               InputField(
-                controller: state,
+                controller: _state,
                 labelText: 'State',
                 validator: (value) =>
                 value!.isEmpty ? 'Required' : null,
@@ -222,7 +216,7 @@ class _CreateAccountScreenState extends State<CreateAccountScreen> {
               ),
               const SizedBox(height: 20),
 
-              // ✅ Show newly created account
+              // ✅ Show saved account
               if (savedAccount != null)
                 Card(
                   child: ListTile(
@@ -230,12 +224,13 @@ class _CreateAccountScreenState extends State<CreateAccountScreen> {
                         "Account Number: ${savedAccount["accountNumber"]}"),
                     subtitle:
                     Text("Name: ${savedAccount["accountName"]}"),
-                    trailing: Text("Bank: ${savedAccount["bankType"]}"),
+                    trailing:
+                    Text("Bank: ${savedAccount["bankType"]}"),
                   ),
                 ),
 
-              if (provider.errorMessage != null)
-                Text(provider.errorMessage!,
+              if (state.errorMessage != null)
+                Text(state.errorMessage!,
                     style: const TextStyle(color: Colors.red)),
             ],
           ),

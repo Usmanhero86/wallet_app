@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import '../model/transaction_history.dart';
+import '../../domain/entities/transaction_history.dart';
 
 Widget buildTransactionItem(TransactionItem transaction, context) {
   final isCredit = transaction.transactionType == 'credit';

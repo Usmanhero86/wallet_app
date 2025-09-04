@@ -1,6 +1,6 @@
 import 'package:fl_chart/fl_chart.dart';
 import 'package:flutter/material.dart';
-import '../model/transaction_history.dart';
+import '../../domain/entities/transaction_history.dart';
 import 'chart_data.dart';
 
 Widget buildSpendingChart(List<TransactionItem> transactions, BuildContext context) {
