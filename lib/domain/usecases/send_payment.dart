@@ -5,11 +5,13 @@ class SendPayment {
 
   SendPayment(this.repository);
 
-  Future<String> execute({
+  /// Include bankCode as an extra parameter
+  Future<String> call({
     required double amount,
     required String narration,
     required String recipientAccount,
+    required String bankCode,
   }) {
-    return repository.sendPayment(amount, narration, recipientAccount);
+    return repository.sendPayment(amount, narration, recipientAccount, bankCode);
   }
 }
