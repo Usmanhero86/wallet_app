@@ -2,6 +2,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../domain/entities/account_response.dart';
 import '../../domain/entities/transaction_history.dart';
 import '../../domain/entities/wallet_balance.dart';
+import '../../domain/repositories/account_repository.dart';
 import '../../domain/usecases/create_virtual_account.dart';
 import '../../domain/usecases/fetch_wallet_balance.dart';
 import '../../domain/usecases/fetch_transactions.dart';
@@ -9,12 +10,14 @@ import '../../domain/usecases/send_payment.dart';
 import 'account_state.dart';
 
 class AccountNotifier extends StateNotifier<AccountState> {
+  final AccountRepository repository;
   final CreateVirtualAccount createAccountUseCase;
   final FetchWalletBalance fetchBalanceUseCase;
   final FetchTransactions fetchTransactionsUseCase;
   final SendPayment sendPaymentUseCase;
 
   AccountNotifier({
+    required this.repository,
     required this.createAccountUseCase,
     required this.fetchBalanceUseCase,
     required this.fetchTransactionsUseCase,
@@ -53,11 +56,18 @@ class AccountNotifier extends StateNotifier<AccountState> {
     }
   }
 
-  Future<String> sendPayment(double amount, String narration, String recipientAccount,) async {
+  Future<String> sendPayment({required double amount, required String narration, required String recipientAccount, required String bankCode,}) async {
     state = state.copyWith(isLoading: true, errorMessage: null);
+
     try {
-      final result =
-      await sendPaymentUseCase(amount, narration, recipientAccount);
+      final result = await sendPaymentUseCase.call(
+        amount: amount,
+        narration: narration,
+        recipientAccount: recipientAccount,
+        bankCode: bankCode,
+      );
+
+      state = state.copyWith(isLoading: false);
       return result;
     } catch (e) {
       state = state.copyWith(isLoading: false, errorMessage: e.toString());

@@ -9,45 +9,69 @@ import '../data/datasources/remote/account_remote_datasource.dart';
 import '../data/datasources/remote/api_service.dart';
 import '../presentation/notifiers/account_notifier.dart';
 import '../presentation/notifiers/account_state.dart';
+import '../presentation/notifiers/payment_notifier.dart';
 
-// ApiService provider
+/// ----------------------------
+/// API SERVICE PROVIDER
+/// ----------------------------
 final apiServiceProvider = Provider<ApiService>((ref) {
   return ApiService();
 });
 
-// RemoteDataSource provider
+/// ----------------------------
+/// REMOTE DATA SOURCE PROVIDER
+/// ----------------------------
 final remoteDataSourceProvider = Provider<AccountRemoteDataSource>((ref) {
   final apiService = ref.read(apiServiceProvider);
   return AccountRemoteDataSourceImpl(apiService);
 });
 
-// Repository provider
+/// ----------------------------
+/// REPOSITORY PROVIDER
+/// ----------------------------
 final accountRepositoryProvider = Provider<AccountRepository>((ref) {
   final remoteDataSource = ref.read(remoteDataSourceProvider);
-  return AccountRepositoryImpl(remoteDataSource);
+  return AccountRepositoryImpl(remoteDataSource: remoteDataSource);
 });
 
-// Use cases
+/// ----------------------------
+/// USE CASES PROVIDERS
+/// ----------------------------
 final createAccountUseCaseProvider = Provider<CreateVirtualAccount>((ref) {
   return CreateVirtualAccount(ref.read(accountRepositoryProvider));
 });
+
 final fetchBalanceUseCaseProvider = Provider<FetchWalletBalance>((ref) {
   return FetchWalletBalance(ref.read(accountRepositoryProvider));
 });
+
 final fetchTransactionsUseCaseProvider = Provider<FetchTransactions>((ref) {
   return FetchTransactions(ref.read(accountRepositoryProvider));
 });
+
 final sendPaymentUseCaseProvider = Provider<SendPayment>((ref) {
   return SendPayment(ref.read(accountRepositoryProvider));
 });
 
-// Notifier
+/// ----------------------------
+/// ACCOUNT NOTIFIER PROVIDER
+/// ----------------------------
 final accountNotifierProvider =
 StateNotifierProvider<AccountNotifier, AccountState>((ref) {
+  final repository = ref.read(accountRepositoryProvider);
+
   return AccountNotifier(
+    repository: repository,
     createAccountUseCase: ref.read(createAccountUseCaseProvider),
     fetchBalanceUseCase: ref.read(fetchBalanceUseCaseProvider),
     fetchTransactionsUseCase: ref.read(fetchTransactionsUseCaseProvider),
     sendPaymentUseCase: ref.read(sendPaymentUseCaseProvider),
   );
 });
+
+// BankNotifier provider
+final bankNotifierProvider = StateNotifierProvider<BankNotifier, BankState>((ref) {
+  final repository = ref.read(accountRepositoryProvider);
+  return BankNotifier(repository);
+});
+

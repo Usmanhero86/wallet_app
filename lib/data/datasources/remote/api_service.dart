@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 
 class ApiService {
@@ -34,12 +35,16 @@ class ApiService {
   }
 
   Map<String, dynamic> _handleResponse(http.Response response) {
-    final data = jsonDecode(response.body);
-
-    if (response.statusCode == 200 && data['code'] == '00') {
-      return data;
-    } else {
-      throw Exception(data['description'] ?? 'API call failed');
+    try {
+      final data = jsonDecode(response.body);
+      if (response.statusCode == 200 && data['code'] == '00') {
+        return data;
+      } else {
+        throw Exception(data['description'] ?? 'API call failed');
+      }
+    } catch (e) {
+      debugPrint('Failed to decode response: ${response.body}');
+      throw Exception('Invalid response from server: ${response.body}');
     }
   }
 }
