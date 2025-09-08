@@ -3,9 +3,10 @@ import '../repositories/account_repository.dart';
 
 class FetchWalletBalance {
   final AccountRepository repository;
+
   FetchWalletBalance(this.repository);
 
-  Future<WalletBalance> call(String key) {
+  Future<WalletBalance> execute(String key) {
     return repository.getWalletBalance(key);
   }
 }

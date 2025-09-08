@@ -12,9 +12,11 @@ class AccountRepositoryImpl implements AccountRepository {
   AccountRepositoryImpl(this.remoteDataSource);
 
   @override
-  Future<AccountResponse> createVirtualAccount(Map<String, dynamic> payload) {
-    return remoteDataSource.createVirtualAccount(payload);
+  Future<AccountResponse> createVirtualAccount(Map<String, dynamic> payload) async {
+    final model = await remoteDataSource.createVirtualAccount(payload);
+    return AccountResponse.fromModel(model);
   }
+
 
   @override
   Future<WalletBalance> getWalletBalance(String key) {
@@ -22,8 +24,8 @@ class AccountRepositoryImpl implements AccountRepository {
   }
 
   @override
-  Future<List<TransactionItem>> getTransactionDetails() {
-    return remoteDataSource.getTransactions("12345"); // inject key later
+  Future<List<TransactionItem>> getTransactions(String key) {
+    return remoteDataSource.getTransactions(key);
   }
 
   @override
@@ -33,7 +35,10 @@ class AccountRepositoryImpl implements AccountRepository {
 
   @override
   Future<void> saveSentPayments(List<TransactionItem> payments) async {
-    await storage.write("sentPayments", payments.map((e) => e.toJson()).toList());
+    await storage.write(
+      "sentPayments",
+      payments.map((e) => e.toJson()).toList(),
+    );
   }
 
   @override
@@ -41,4 +46,10 @@ class AccountRepositoryImpl implements AccountRepository {
     final data = storage.read<List>("sentPayments") ?? [];
     return data.map((e) => TransactionItem.fromJson(e)).toList();
   }
+
+  @override
+  Future<List<TransactionItem>> getTransactionDetails() async {
+    return remoteDataSource.getTransactions("12345");
+  }
+
 }

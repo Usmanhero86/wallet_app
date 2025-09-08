@@ -1,99 +1,52 @@
-import 'dart:convert';
-import 'package:flutter/services.dart';
-import 'package:http/http.dart' as http;
-import 'package:wallet_app/data/datasources/remote/account_remote_datasource.dart';
-
+import 'package:get_storage/get_storage.dart';
 import '../../domain/entities/account_response.dart';
 import '../../domain/entities/transaction_history.dart';
 import '../../domain/entities/wallet_balance.dart';
+import '../../domain/repositories/account_repository.dart';
+import '../datasources/remote/account_remote_datasource.dart';
 
-class AccountRemoteDataSourceImpl implements AccountRemoteDataSource {
-  static const String baseUrl = 'https://sandbox.zainpay.ng';
-  static const String _authToken = 'Bearer <your_token>';
+class AccountRepositoryImpl implements AccountRepository {
+  final AccountRemoteDataSource remoteDataSource;
+  final GetStorage storage = GetStorage();
+
+  AccountRepositoryImpl(this.remoteDataSource);
 
   @override
   Future<AccountResponse> createVirtualAccount(Map<String, dynamic> payload) async {
-    final url = Uri.parse('$baseUrl/virtual-account/create');
-    final response = await http.post(
-      url,
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': _authToken,
-      },
-      body: jsonEncode(payload),
-    );
-
-    final data = jsonDecode(response.body);
-    if (response.statusCode == 200 && data['code'] == '00') {
-      return AccountResponse.fromJson(data['data']);
-    } else {
-      throw PlatformException(
-        code: 'ACCOUNT_FAILED',
-        message: data['description'] ?? 'Failed to create account',
-      );
-    }
+    final model = await remoteDataSource.createVirtualAccount(payload);
+    // Convert AccountModel -> AccountResponse (domain entity)
+    return AccountResponse.fromModel(model);
   }
 
   @override
-  Future<WalletBalance> getWalletBalance(String key) async {
-    final url = Uri.parse('$baseUrl/virtual-account/wallet/balance/$key');
-    final response = await http.get(url, headers: {
-      'Content-Type': 'application/json',
-      'Authorization': _authToken,
-    });
-
-    final data = jsonDecode(response.body);
-    if (response.statusCode == 200 && data['code'] == '00') {
-      return WalletBalance.fromJson(data['data']);
-    } else {
-      throw PlatformException(
-        code: 'BALANCE_FAILED',
-        message: data['description'] ?? 'Failed to fetch balance',
-      );
-    }
+  Future<WalletBalance> getWalletBalance(String key) {
+    return remoteDataSource.getWalletBalance(key);
   }
 
   @override
-  Future<List<TransactionItem>> getTransactions(String key) async {
-    final url = Uri.parse('$baseUrl/virtual-account/wallet/transactions/$key');
-    final response = await http.get(url, headers: {
-      'Content-Type': 'application/json',
-      'Authorization': _authToken,
-    });
-
-    final data = jsonDecode(response.body);
-    if (response.statusCode == 200 && data['code'] == '00') {
-      final List<dynamic> rawList = data['data'];
-      return rawList.map((item) => TransactionItem.fromJson(item)).toList();
-    } else {
-      throw PlatformException(
-        code: 'TRANSACTION_FAILED',
-        message: data['description'] ?? 'Failed to fetch transactions',
-      );
-    }
+  Future<List<TransactionItem>> getTransactions(String key) {
+    return remoteDataSource.getTransactions(key);
   }
 
   @override
-  Future<String> sendPayment(double amount, String narration, String recipientAccount) async {
-    final url = Uri.parse('$baseUrl/payments');
-    final response = await http.post(url,
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': _authToken,
-        },
-        body: jsonEncode({
-          'amount': amount,
-          'narration': narration,
-          'recipientAccount': recipientAccount,
-        }));
-
-    final data = jsonDecode(response.body);
-    if (response.statusCode == 200 && data['code'] == '00') {
-      return 'success';
-    } else if (data['code'] == 'INSUFFICIENT_FUNDS') {
-      return 'insufficient';
-    } else {
-      return 'failed';
-    }
+  Future<String> sendPayment(double amount, String narration, String recipientAccount) {
+    return remoteDataSource.sendPayment(amount, narration, recipientAccount);
   }
+
+  @override
+  Future<void> saveSentPayments(List<TransactionItem> payments) async {
+    await storage.write("sentPayments", payments.map((e) => e.toJson()).toList());
+  }
+
+  @override
+  Future<List<TransactionItem>> loadSentPayments() async {
+    final data = storage.read<List>("sentPayments") ?? [];
+    return data.map((e) => TransactionItem.fromJson(e)).toList();
+  }
+
+  @override
+  Future<List<TransactionItem>> getTransactionDetails() {
+    return remoteDataSource.getTransactions("12345");
+  }
+
 }

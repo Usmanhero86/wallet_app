@@ -1,4 +1,4 @@
-class Account {
+class AccountModel {
   final String accountNumber;
   final String accountName;
   final String bankType;
@@ -7,7 +7,7 @@ class Account {
   final String email;
   final DateTime createdAt;
 
-  Account({
+  AccountModel({
     required this.accountNumber,
     required this.accountName,
     required this.bankType,
@@ -17,8 +17,8 @@ class Account {
     required this.createdAt,
   });
 
-  factory Account.fromJson(Map<String, dynamic> json) {
-    return Account(
+  factory AccountModel.fromJson(Map<String, dynamic> json) {
+    return AccountModel(
       accountNumber: json['accountNumber'] ?? '',
       accountName: json['accountName'] ?? '',
       bankType: json['bankType'] ?? '',

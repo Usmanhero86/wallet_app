@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../di/providers.dart';
-import '../providers/account_repository_provider.dart';
-import '../widget/input_field.dart';
 import '../widget/app_button.dart';
+import '../widget/input_field.dart';
+import '../widget/narration_input.dart';
 import '../widget/u_app_bar.dart';
 
 class SendPaymentScreen extends ConsumerStatefulWidget {
@@ -15,60 +15,75 @@ class SendPaymentScreen extends ConsumerStatefulWidget {
 
 class _SendPaymentScreenState extends ConsumerState<SendPaymentScreen> {
   final _formKey = GlobalKey<FormState>();
-  final _amountController = TextEditingController();
-  final _narrationController = TextEditingController();
-  final _recipientController = TextEditingController();
+
+  final _amount = TextEditingController();
+  final _recipient = TextEditingController();
+  final _narration = TextEditingController();
+  final _dateController = TextEditingController();
+
+  DateTime? _selectedDate;
 
   @override
   void dispose() {
-    _amountController.dispose();
-    _narrationController.dispose();
-    _recipientController.dispose();
+    _amount.dispose();
+    _recipient.dispose();
+    _narration.dispose();
+    _dateController.dispose();
     super.dispose();
   }
 
-  Future<void> _sendPayment(BuildContext context) async {
-    if (!_formKey.currentState!.validate()) return;
-
-    final notifier = ref.read(accountNotifierProvider.notifier);
-
-    final result = await notifier.sendPayment(
-      double.tryParse(_amountController.text) ?? 0.0,
-      _narrationController.text,
-      _recipientController.text,
+  Future<void> _pickDate(BuildContext context) async {
+    final today = DateTime.now();
+    final picked = await showDatePicker(
+      context: context,
+      initialDate: today,
+      firstDate: today.subtract(const Duration(days: 365)),
+      lastDate: today.add(const Duration(days: 365)),
     );
+    if (picked != null) {
+      setState(() {
+        _selectedDate = picked;
+        _dateController.text =
+        "${picked.year}-${picked.month.toString().padLeft(2, '0')}-${picked.day.toString().padLeft(2, '0')}";
+      });
+    }
+  }
 
-    if (!mounted) return;
+  Future<void> _submitPayment(BuildContext context) async {
+    if (_formKey.currentState!.validate()) {
+      if (_selectedDate == null) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text("Please select a date")),
+        );
+        return;
+      }
 
-    switch (result) {
-      case 'success':
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Payment sent successfully!')),
-        );
-        Navigator.pop(context, true); // ✅ Return to Dashboard and reload
-        break;
+      final notifier = ref.read(accountNotifierProvider.notifier);
 
-      case 'no_account':
+      final result = await notifier.sendPayment(
+        double.tryParse(_amount.text) ?? 0.0,
+        _narration.text,
+        _recipient.text,
+      );
+
+      if (!mounted) return;
+
+      if (result == "success") {
         ScaffoldMessenger.of(context).showSnackBar(
-           SnackBar(content: Text('Please create an account first.')),
+          const SnackBar(content: Text("Payment sent successfully")),
         );
-        break;
-      case 'invalid_amount':
+        Navigator.pop(context, true); // ✅ Return true so dashboard refreshes
+      } else {
         ScaffoldMessenger.of(context).showSnackBar(
-           SnackBar(content: Text('Amount must be greater than 100.')),
+          SnackBar(
+            content: Text(
+              result == "error"
+                  ? "Payment failed. Please try again."
+                  : result,
+            ),
+          ),
         );
-        break;
-      case 'insufficient':
-        ScaffoldMessenger.of(context).showSnackBar(
-           SnackBar(content: Text('Insufficient funds.')),
-        );
-        break;
-      case 'failed':
-      case 'error':
-      default:
-        ScaffoldMessenger.of(context).showSnackBar(
-           SnackBar(content: Text('Payment failed. Please try again.')),
-        );
+      }
     }
   }
 
@@ -76,42 +91,55 @@ class _SendPaymentScreenState extends ConsumerState<SendPaymentScreen> {
   Widget build(BuildContext context) {
     final state = ref.watch(accountNotifierProvider);
     return Scaffold(
-      appBar: UAppBar(title: Text('Send Payment')),
+      appBar: UAppBar(title: const Text("Send Payment")),
       body: Padding(
-        padding:  EdgeInsets.all(16.0),
-        child: Form(
+        padding: const EdgeInsets.all(16),
+        child: state.isLoading
+            ? const Center(child: CircularProgressIndicator())
+            : Form(
           key: _formKey,
-          child: Column(
+          child: ListView(
             children: [
               InputField(
-                controller: _amountController,
-                labelText: "Amount",
+                controller: _amount,
+                labelText: 'Amount',
                 keyboardType: TextInputType.number,
                 validator: (value) =>
-                (value == null || value.isEmpty) ? "Enter amount" : null,
+                value!.isEmpty ? 'Amount is required' : null,
               ),
               InputField(
-                controller: _narrationController,
-                labelText: "Narration",
-                validator: (value) => (value == null || value.isEmpty)
-                    ? "Enter narration"
-                    : null,
+                controller: _recipient,
+                labelText: 'Recipient Account',
+                validator: (value) =>
+                value!.isEmpty ? 'Recipient is required' : null,
               ),
-              InputField(
-                controller: _recipientController,
-                labelText: "Recipient Account",
-                validator: (value) => (value == null || value.isEmpty)
-                    ? "Enter recipient account"
-                    : null,
+              NarrationInput(controller: _narration),
+
+              GestureDetector(
+                onTap: () => _pickDate(context),
+                child: AbsorbPointer(
+                  child: InputField(
+                    controller: _dateController,
+                    labelText: 'Transaction Date',
+                    validator: (value) => value!.isEmpty
+                        ? 'Please pick a transaction date'
+                        : null,
+                  ),
+                ),
               ),
-               SizedBox(height: 24),
-              state.isLoading
-                  ?  CircularProgressIndicator()
-                  : AppButton(
-                onPressed: () => _sendPayment(context),
-                text: 'Send',
-                padding: 14,
+              const SizedBox(height: 20),
+              AppButton(
+                onPressed: () => _submitPayment(context),
+                text: 'Send Payment',
               ),
+              if (state.errorMessage != null)
+                Padding(
+                  padding: const EdgeInsets.only(top: 12),
+                  child: Text(
+                    state.errorMessage!,
+                    style: const TextStyle(color: Colors.red),
+                  ),
+                ),
             ],
           ),
         ),

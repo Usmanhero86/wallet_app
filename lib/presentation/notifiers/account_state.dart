@@ -34,7 +34,7 @@ class AccountState extends Equatable {
   }) {
     return AccountState(
       isLoading: isLoading ?? this.isLoading,
-      errorMessage: errorMessage ?? this.errorMessage,
+      errorMessage: errorMessage,
       accountResponse: accountResponse ?? this.accountResponse,
       walletBalance: walletBalance ?? this.walletBalance,
       transactions: transactions ?? this.transactions,

@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:get_storage/get_storage.dart';
 import '../../di/providers.dart';
 import '../widget/app_button.dart';
+import '../widget/date_picker_input.dart';
 import '../widget/input_field.dart';
 import '../widget/u_app_bar.dart';
 import 'dashboard_screen.dart';
@@ -13,8 +14,12 @@ class CreateAccountScreen extends ConsumerStatefulWidget {
   @override
   ConsumerState<CreateAccountScreen> createState() => _CreateAccountScreenState();
 }
+
 class _CreateAccountScreenState extends ConsumerState<CreateAccountScreen> {
   final _formKey = GlobalKey<FormState>();
+  final storage = GetStorage();
+
+  // Controllers
   final _firstName = TextEditingController();
   final _surname = TextEditingController();
   final _email = TextEditingController();
@@ -25,7 +30,6 @@ class _CreateAccountScreenState extends ConsumerState<CreateAccountScreen> {
   final _dob = TextEditingController();
   final _state = TextEditingController();
   final _gender = TextEditingController();
-  final storage = GetStorage();
 
   final List<String> _banks = ['Select Bank', 'fcmb', 'fidelity', 'GTBank'];
   String _selectedBank = 'Select Bank';
@@ -45,61 +49,71 @@ class _CreateAccountScreenState extends ConsumerState<CreateAccountScreen> {
     super.dispose();
   }
 
+  Future<void> _pickDate(BuildContext context) async {
+    final picked = await showDatePicker(
+      context: context,
+      firstDate: DateTime(1900),
+      lastDate: DateTime.now(),
+      initialDate: DateTime(2000),
+    );
+    if (picked != null) {
+      _dob.text = "${picked.year}-${picked.month}-${picked.day}";
+    }
+  }
+
   Future<void> _submitForm(BuildContext context) async {
-    if (_formKey.currentState!.validate()) {
-      if (_selectedBank == 'Select Bank') {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Please select a bank')),
-        );
-        return;
-      }
+    if (!_formKey.currentState!.validate()) return;
 
-      final notifier = ref.read(accountNotifierProvider.notifier);
-      final payload = {
-        "bankType": _selectedBank,
-        "firstName": _firstName.text,
-        "surname": _surname.text,
-        "email": _email.text,
-        "mobileNumber": _mobile.text,
-        "dob": _dob.text,
-        "gender": _gender.text,
-        "address": _address.text,
-        "title": _title.text,
-        "state": _state.text,
-        "bvn": _bvn.text,
-        "zainboxCode": "EXM_p5GDESXZzc0JKbB50DNS",
-      };
+    if (_selectedBank == 'Select Bank') {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Please select a bank')),
+      );
+      return;
+    }
 
-      final result = await notifier.createVirtualAccount(payload);
+    final notifier = ref.read(accountNotifierProvider.notifier);
+    final payload = {
+      "bankType": _selectedBank,
+      "firstName": _firstName.text,
+      "surname": _surname.text,
+      "email": _email.text,
+      "mobileNumber": _mobile.text,
+      "dob": _dob.text,
+      "gender": _gender.text,
+      "address": _address.text,
+      "title": _title.text,
+      "state": _state.text,
+      "bvn": _bvn.text,
+      "zainboxCode": "EXM_p5GDESXZzc0JKbB50DNS",
+    };
 
-      if (!mounted) return;
+    final result = await notifier.createVirtualAccount(payload);
 
-      if (result == "success") {
-        final account = ref.read(accountNotifierProvider).accountResponse;
+    if (!mounted) return;
 
-        if (account != null) {
-          // ✅ Save locally
-          storage.write("account", {
-            "accountNumber": account.accountNumber,
-            "accountName": account.accountName,
-            "bankType": _selectedBank,
-          });
+    if (result == "success") {
+      final account = ref.read(accountNotifierProvider).accountResponse;
 
-          // ✅ Navigate instantly to dashboard & pass account details
-          Navigator.pushReplacement(
-            context,
-            MaterialPageRoute(
-              builder: (_) => DashboardScreen(),
-            ),
-          );
-        }
-      } else {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(result == "error" ? "Account creation failed" : result),
-          ),
+      if (account != null) {
+        // ✅ Save locally
+        storage.write("account", {
+          "accountNumber": account.accountNumber,
+          "accountName": account.accountName,
+          "bankType": _selectedBank,
+        });
+
+        // ✅ Navigate instantly to dashboard
+        Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(builder: (_) => const DashboardScreen()),
         );
       }
+    } else {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(result == "error" ? "Account creation failed" : result),
+        ),
+      );
     }
   }
 
@@ -109,7 +123,7 @@ class _CreateAccountScreenState extends ConsumerState<CreateAccountScreen> {
     final savedAccount = storage.read("account");
 
     return Scaffold(
-      appBar: UAppBar(title: const Text("Create Virtual Account")),
+      appBar: const UAppBar(title: Text("Create Virtual Account")),
       body: Padding(
         padding: const EdgeInsets.all(16.0),
         child: state.isLoading
@@ -118,6 +132,7 @@ class _CreateAccountScreenState extends ConsumerState<CreateAccountScreen> {
           key: _formKey,
           child: ListView(
             children: [
+              // --- Bank selection ---
               Padding(
                 padding: const EdgeInsets.all(8.0),
                 child: DropdownButtonFormField<String>(
@@ -129,8 +144,6 @@ class _CreateAccountScreenState extends ConsumerState<CreateAccountScreen> {
                     ),
                     filled: true,
                     fillColor: Colors.white,
-                    contentPadding: const EdgeInsets.symmetric(
-                        horizontal: 16, vertical: 12),
                   ),
                   items: _banks.map((String bank) {
                     return DropdownMenuItem<String>(
@@ -149,93 +162,68 @@ class _CreateAccountScreenState extends ConsumerState<CreateAccountScreen> {
                   },
                 ),
               ),
-              InputField(
-                controller: _firstName,
-                labelText: 'First Name',
-                validator: (value) =>
-                value!.isEmpty ? 'Required' : null,
+
+              // --- Personal details ---
+              InputField(controller: _firstName, labelText: 'First Name', validator: _requiredValidator),
+              InputField(controller: _surname, labelText: 'Surname', validator: _requiredValidator),
+              InputField(controller: _mobile, labelText: 'Mobile Number', validator: _requiredValidator),
+              InputField(controller: _bvn, labelText: 'BVN', validator: _requiredValidator),
+              InputField(controller: _email, labelText: 'Email', validator: _requiredValidator),
+
+              // --- Date picker ---
+              GestureDetector(
+                onTap: () => _pickDate(context),
+                child: AbsorbPointer(
+                  child: DatePickerInput(
+                    controller: _dob,
+                    labelText: 'Date of Birth',
+                    validator: (value) => value!.isEmpty ? 'Required' : null,
+                    lastDate: DateTime.now(), // prevent selecting future dates
+                  ),
+
+                ),
               ),
-              InputField(
-                controller: _surname,
-                labelText: 'Surname',
-                validator: (value) =>
-                value!.isEmpty ? 'Required' : null,
-              ),
-              InputField(
-                controller: _mobile,
-                labelText: 'Mobile Number',
-                validator: (value) =>
-                value!.isEmpty ? 'Required' : null,
-              ),
-              InputField(
-                controller: _bvn,
-                labelText: 'BVN',
-                validator: (value) =>
-                value!.isEmpty ? 'Required' : null,
-              ),
-              InputField(
-                controller: _email,
-                labelText: 'Email',
-                validator: (value) =>
-                value!.isEmpty ? 'Required' : null,
-              ),
-              InputField(
-                controller: _dob,
-                labelText: 'Date of Birth',
-                validator: (value) =>
-                value!.isEmpty ? 'Required' : null,
-              ),
-              InputField(
-                controller: _title,
-                labelText: 'Title',
-                validator: (value) =>
-                value!.isEmpty ? 'Required' : null,
-              ),
-              InputField(
-                controller: _address,
-                labelText: 'Address',
-                validator: (value) =>
-                value!.isEmpty ? 'Required' : null,
-              ),
-              InputField(
-                controller: _gender,
-                labelText: 'Gender',
-                validator: (value) =>
-                value!.isEmpty ? 'Required' : null,
-              ),
-              InputField(
-                controller: _state,
-                labelText: 'State',
-                validator: (value) =>
-                value!.isEmpty ? 'Required' : null,
-              ),
+
+              InputField(controller: _title, labelText: 'Title', validator: _requiredValidator),
+              InputField(controller: _address, labelText: 'Address', validator: _requiredValidator),
+              InputField(controller: _gender, labelText: 'Gender', validator: _requiredValidator),
+              InputField(controller: _state, labelText: 'State', validator: _requiredValidator),
+
               const SizedBox(height: 20),
+
               AppButton(
                 onPressed: () => _submitForm(context),
                 text: 'Create Account',
               ),
+
               const SizedBox(height: 20),
 
-              // ✅ Show saved account
+              // --- Saved account preview ---
               if (savedAccount != null)
                 Card(
                   child: ListTile(
-                    title: Text(
-                        "Account Number: ${savedAccount["accountNumber"]}"),
-                    subtitle:
-                    Text("Name: ${savedAccount["accountName"]}"),
-                    trailing:
-                    Text("Bank: ${savedAccount["bankType"]}"),
+                    title: Text("Account Number: ${savedAccount["accountNumber"]}"),
+                    subtitle: Text("Name: ${savedAccount["accountName"]}"),
+                    trailing: Text("Bank: ${savedAccount["bankType"]}"),
                   ),
                 ),
 
               if (state.errorMessage != null)
-                Text(state.errorMessage!,
-                    style: const TextStyle(color: Colors.red)),
+                Padding(
+                  padding: const EdgeInsets.only(top: 12.0),
+                  child: Text(state.errorMessage!, style: const TextStyle(color: Colors.red)),
+                ),
             ],
           ),
         ),
       ),
     );
+  }
+
+  String? _requiredValidator(String? value) {
+    if (value == null || value.trim().isEmpty) {
+      return "Required";
+    }
+    return null;
   }
 }
