@@ -49,7 +49,7 @@ class DashboardScreen extends ConsumerWidget {
 
               // --- Balance Card ---
               if (savedAccount != null)
-                BalanceCard(balance: state.walletBalance?.balanceAmount ?? 0.0),
+                BalanceCard(balance: state.walletBalance?.availableBalance ?? 0.0),
 
               const SizedBox(height: 24),
 

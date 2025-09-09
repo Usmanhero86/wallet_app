@@ -68,13 +68,13 @@ class AccountRepositoryImpl implements AccountRepository {
         .toList();
   }
 
-  // ✅ Get list of banks
+  //  Get list of banks
   @override
   Future<List<Bank>> getBankList() {
     return remoteDataSource.getBankList();
   }
 
-  // ✅ Example placeholder for transaction details
+  //  Example placeholder for transaction details
   @override
   Future<List<TransactionItem>> getTransactionDetails() async {
     // You might want to replace "default-key" with real transaction lookup

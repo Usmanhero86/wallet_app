@@ -6,7 +6,7 @@ class CreateVirtualAccount {
 
   CreateVirtualAccount(this.repository);
 
-  Future<AccountResponse> execute(Map<String, dynamic> payload) {
+  Future<AccountResponse> call(Map<String, dynamic> payload) async {
     return repository.createVirtualAccount(payload);
   }
 }

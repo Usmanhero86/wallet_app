@@ -1,7 +1,5 @@
+import 'dart:nativewrappers/_internal/vm/lib/ffi_allocation_patch.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import '../../domain/entities/account_response.dart';
-import '../../domain/entities/transaction_history.dart';
-import '../../domain/entities/wallet_balance.dart';
 import '../../domain/repositories/account_repository.dart';
 import '../../domain/usecases/create_virtual_account.dart';
 import '../../domain/usecases/fetch_wallet_balance.dart';
@@ -27,7 +25,7 @@ class AccountNotifier extends StateNotifier<AccountState> {
   Future<String> createVirtualAccount(Map<String, dynamic> payload) async {
     state = state.copyWith(isLoading: true, errorMessage: null);
     try {
-      final account = await createAccountUseCase(payload);
+      final account = await createAccountUseCase.call(payload);
       state = state.copyWith(isLoading: false, accountResponse: account);
       return 'success';
     } catch (e) {
@@ -39,7 +37,7 @@ class AccountNotifier extends StateNotifier<AccountState> {
   Future<void> fetchWalletBalance() async {
     state = state.copyWith(isLoading: true, errorMessage: null);
     try {
-      final balance = await fetchBalanceUseCase(""); // token if needed
+      final balance = await fetchBalanceUseCase.call();
       state = state.copyWith(isLoading: false, walletBalance: balance);
     } catch (e) {
       state = state.copyWith(isLoading: false, errorMessage: e.toString());
@@ -49,12 +47,13 @@ class AccountNotifier extends StateNotifier<AccountState> {
   Future<void> fetchTransactions() async {
     state = state.copyWith(isLoading: true, errorMessage: null);
     try {
-      final txns = await fetchTransactionsUseCase();
+      final txns = await fetchTransactionsUseCase.call();
       state = state.copyWith(isLoading: false, transactions: txns);
     } catch (e) {
       state = state.copyWith(isLoading: false, errorMessage: e.toString());
     }
   }
+
 
   Future<String> sendPayment({required double amount, required String narration, required String recipientAccount, required String bankCode,}) async {
     state = state.copyWith(isLoading: true, errorMessage: null);
@@ -79,7 +78,7 @@ class AccountNotifier extends StateNotifier<AccountState> {
     if (state.walletBalance != null) {
       state = state.copyWith(
         walletBalance: state.walletBalance!.copyWith(
-          balanceAmount: newBalance,
+          availableBalance: newBalance,
         ),
       );
     }

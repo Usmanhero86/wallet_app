@@ -14,5 +14,5 @@ final accountRemoteDataSourceProvider = Provider<AccountRemoteDataSource>(
 
 /// Provide AccountRepository (implementation)
 final accountRepositoryProvider = Provider<AccountRepository>(
-      (ref) => AccountRepositoryImpl(ref.read(accountRemoteDataSourceProvider)),
-);
+      (ref) => AccountRepositoryImpl(
+          remoteDataSource: ref.read(accountRemoteDataSourceProvider)));

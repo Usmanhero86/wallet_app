@@ -1,5 +1,3 @@
-import 'package:flutter/cupertino.dart';
-
 import '../../../domain/entities/account_response.dart';
 import '../../../domain/entities/bank.dart';
 import '../../../domain/entities/transaction_history.dart';
@@ -22,7 +20,7 @@ class AccountRemoteDataSourceImpl implements AccountRemoteDataSource {
   @override
   Future<AccountResponse> createVirtualAccount(Map<String, dynamic> payload) async {
     final data = await apiService.post("/virtual-account/create/request", payload);
-    return AccountResponse.fromJson(data["data"]);
+    return AccountResponse.fromModel(data["data"]);
   }
 
   @override
