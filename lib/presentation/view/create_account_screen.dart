@@ -149,71 +149,18 @@ class _CreateAccountScreenState extends ConsumerState<CreateAccountScreen> {
                   },
                 ),
               ),
-              InputField(
-                controller: _firstName,
-                labelText: 'First Name',
-                validator: (value) =>
-                value!.isEmpty ? 'Required' : null,
-              ),
-              InputField(
-                controller: _surname,
-                labelText: 'Surname',
-                validator: (value) =>
-                value!.isEmpty ? 'Required' : null,
-              ),
-              InputField(
-                controller: _mobile,
-                labelText: 'Mobile Number',
-                validator: (value) =>
-                value!.isEmpty ? 'Required' : null,
-              ),
-              InputField(
-                controller: _bvn,
-                labelText: 'BVN',
-                validator: (value) =>
-                value!.isEmpty ? 'Required' : null,
-              ),
-              InputField(
-                controller: _email,
-                labelText: 'Email',
-                validator: (value) =>
-                value!.isEmpty ? 'Required' : null,
-              ),
-              InputField(
-                controller: _dob,
-                labelText: 'Date of Birth',
-                validator: (value) =>
-                value!.isEmpty ? 'Required' : null,
-              ),
-              InputField(
-                controller: _title,
-                labelText: 'Title',
-                validator: (value) =>
-                value!.isEmpty ? 'Required' : null,
-              ),
-              InputField(
-                controller: _address,
-                labelText: 'Address',
-                validator: (value) =>
-                value!.isEmpty ? 'Required' : null,
-              ),
-              InputField(
-                controller: _gender,
-                labelText: 'Gender',
-                validator: (value) =>
-                value!.isEmpty ? 'Required' : null,
-              ),
-              InputField(
-                controller: _state,
-                labelText: 'State',
-                validator: (value) =>
-                value!.isEmpty ? 'Required' : null,
-              ),
+              InputField(controller: _firstName, labelText: 'First Name', validator: (value) => value!.isEmpty ? 'Required' : null,),
+              InputField(controller: _surname, labelText: 'Surname', validator: (value) => value!.isEmpty ? 'Required' : null,),
+              InputField(controller: _mobile, labelText: 'Mobile Number', validator: (value) => value!.isEmpty ? 'Required' : null,),
+              InputField(controller: _bvn, labelText: 'BVN', validator: (value) => value!.isEmpty ? 'Required' : null,),
+              InputField(controller: _email, labelText: 'Email', validator: (value) => value!.isEmpty ? 'Required' : null,),
+              InputField(controller: _dob, labelText: 'Date of Birth', validator: (value) => value!.isEmpty ? 'Required' : null,),
+              InputField(controller: _title, labelText: 'Title', validator: (value) => value!.isEmpty ? 'Required' : null,),
+              InputField(controller: _address, labelText: 'Address', validator: (value) => value!.isEmpty ? 'Required' : null,),
+              InputField(controller: _gender, labelText: 'Gender', validator: (value) => value!.isEmpty ? 'Required' : null,),
+              InputField(controller: _state, labelText: 'State', validator: (value) => value!.isEmpty ? 'Required' : null,),
               const SizedBox(height: 20),
-              AppButton(
-                onPressed: () => _submitForm(context),
-                text: 'Create Account',
-              ),
+              AppButton(onPressed: () => _submitForm(context), text: 'Create Account',),
               const SizedBox(height: 20),
 
               // ✅ Show saved account

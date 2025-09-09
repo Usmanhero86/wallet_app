@@ -3,9 +3,10 @@ import '../repositories/account_repository.dart';
 
 class FetchTransactions {
   final AccountRepository repository;
+
   FetchTransactions(this.repository);
 
-  Future<List<TransactionItem>> call() {
+  Future<List<TransactionItem>> execute(String key) {
     return repository.getTransactionDetails();
   }
 }

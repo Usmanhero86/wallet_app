@@ -44,18 +44,23 @@ class TransactionItem {
     required this.transactionType,
   });
 
+  /// Helper for safe number parsing
+  static double _parseToDouble(dynamic value) {
+    if (value == null) return 0.0;
+    if (value is num) return value.toDouble();
+    if (value is String) return double.tryParse(value) ?? 0.0;
+    return 0.0;
+  }
+
   factory TransactionItem.fromJson(Map<String, dynamic> json) {
     return TransactionItem(
       accountNumber: json['accountNumber'] ?? '',
       destinationAccountNumber: json['destinationAccountNumber'] ?? '',
-      amount: (json['amount'] is String)
-          ? double.tryParse(json['amount']) ?? 0
-          : (json['amount'] ?? 0).toDouble(),
-      balance: (json['balance'] is String)
-          ? double.tryParse(json['balance']) ?? 0
-          : (json['balance'] ?? 0).toDouble(),
+      amount: _parseToDouble(json['amount']),
+      balance: _parseToDouble(json['balance']),
       narration: json['narration'] ?? '',
-      transactionDate: DateTime.tryParse(json['transactionDate'] ?? '') ?? DateTime.now(),
+      transactionDate: DateTime.tryParse(json['transactionDate'] ?? '') ??
+          DateTime(2000, 1, 1), // ✅ safer fallback
       transactionRef: json['transactionRef'] ?? '',
       transactionType: json['transactionType'] ?? '',
     );

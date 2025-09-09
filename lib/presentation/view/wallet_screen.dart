@@ -1,4 +1,3 @@
-// lib/presentation/screens/wallet_screen.dart
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../di/providers.dart';
@@ -75,7 +74,7 @@ class _WalletScreenState extends ConsumerState<WalletScreen> {
                   const SizedBox(height: 10),
                   Text(
                     state.walletBalance != null
-                        ? '₦${state.walletBalance!.balanceAmount.toStringAsFixed(2)}'
+                        ? '₦${state.walletBalance!.availableBalance.toStringAsFixed(2)}'
                         : '₦0.00',
                     style: TextStyle(
                       fontSize: 32,

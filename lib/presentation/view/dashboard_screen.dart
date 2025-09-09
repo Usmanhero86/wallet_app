@@ -22,70 +22,34 @@ class DashboardScreen extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final state = ref.watch(accountNotifierProvider);
+
     final allTransactions = [...state.transactions]
       ..sort((a, b) => b.transactionDate.compareTo(a.transactionDate));
+
     final storage = GetStorage();
     final savedAccount = storage.read("account");
+
     return Scaffold(
-      appBar:  UAppBar(title: Text('Dashboard')),
-      body:  state.isLoading
-          ?  Center(child: CircularProgressIndicator())
+      appBar: const UAppBar(title: Text('Dashboard')),
+      body: state.isLoading
+          ? const Center(child: CircularProgressIndicator())
+          : state.errorMessage != null
+          ? _buildErrorState(context, state.errorMessage!, ref)
           : RefreshIndicator(
         onRefresh: () => _loadDashboardData(ref),
         child: SingleChildScrollView(
-          physics:  AlwaysScrollableScrollPhysics(),
-          padding:  EdgeInsets.all(16),
+          physics: const AlwaysScrollableScrollPhysics(),
+          padding: const EdgeInsets.all(16),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-          if (savedAccount != null)
-            Card(
-        margin:  EdgeInsets.symmetric(vertical: 8),
-        child: Padding(
-          padding:  EdgeInsets.all(16),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  Text(
-                    "Account Number: ${savedAccount["accountNumber"]}",
-                    style: const TextStyle(
-                      fontSize: 16,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                  IconButton(
-                    icon: const Icon(Icons.copy, size: 20),
-                    onPressed: () {
-                      Clipboard.setData(
-                        ClipboardData(text: savedAccount["accountNumber"]),
-                      );
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        const SnackBar(content: Text("Account number copied!")),
-                      );
-                    },
-                  ),
-                ],
-              ),
-               SizedBox(height: 4),
-              Text(
-                "Name: ${savedAccount["accountName"]}",
-                style: const TextStyle(fontSize: 14),
-              ),
-               SizedBox(height: 4),
-              Text(
-                "Bank: ${savedAccount["bankType"]}",
-                style: const TextStyle(fontSize: 14),
-              ),
-            ],
-          ),
-        ),
-      ),
+              // --- Account Details ---
+              if (savedAccount != null)
+                _buildAccountCard(context, savedAccount),
 
-        // --- Balance Card ---
-              BalanceCard(balance: state.walletBalance?.balanceAmount ?? 0.0),
+              // --- Balance Card ---
+              if (savedAccount != null)
+                BalanceCard(balance: state.walletBalance?.availableBalance ?? 0.0),
 
               const SizedBox(height: 24),
 
@@ -108,19 +72,20 @@ class DashboardScreen extends ConsumerWidget {
                   AppButton(
                     onPressed: () async {
                       if (savedAccount == null) {
-                        // 🚫 No account yet → show a message
                         ScaffoldMessenger.of(context).showSnackBar(
-                          const SnackBar(content: Text("Please create an account first")),
+                          const SnackBar(
+                              content: Text("Please create an account first")),
                         );
                       } else {
-                        // ✅ Account exists → allow Send Payment
                         final result = await Navigator.push(
                           context,
                           MaterialPageRoute(
                             builder: (_) => const SendPaymentScreen(),
                           ),
                         );
+
                         if (result == true) {
+                          // ✅ Reload dashboard automatically
                           _loadDashboardData(ref);
                         }
                       }
@@ -153,8 +118,7 @@ class DashboardScreen extends ConsumerWidget {
                   physics: const NeverScrollableScrollPhysics(),
                   shrinkWrap: true,
                   itemCount: allTransactions.length,
-                  separatorBuilder: (_, __) =>
-                  const SizedBox(height: 8),
+                  separatorBuilder: (_, __) => const SizedBox(height: 8),
                   itemBuilder: (context, index) {
                     final transaction = allTransactions[index];
                     return buildTransactionItem(transaction, context);
@@ -162,6 +126,49 @@ class DashboardScreen extends ConsumerWidget {
                 ),
             ],
           ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildAccountCard(BuildContext context, dynamic savedAccount) {
+    return Card(
+      margin: const EdgeInsets.symmetric(vertical: 8),
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Text(
+                  "Account Number: ${savedAccount["accountNumber"]}",
+                  style: const TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+                IconButton(
+                  icon: const Icon(Icons.copy, size: 20),
+                  onPressed: () {
+                    Clipboard.setData(
+                      ClipboardData(text: savedAccount["accountNumber"]),
+                    );
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(content: Text("Account number copied!")),
+                    );
+                  },
+                ),
+              ],
+            ),
+            const SizedBox(height: 4),
+            Text("Name: ${savedAccount["accountName"]}",
+                style: const TextStyle(fontSize: 14)),
+            const SizedBox(height: 4),
+            Text("Bank: ${savedAccount["bankType"]}",
+                style: const TextStyle(fontSize: 14)),
+          ],
         ),
       ),
     );

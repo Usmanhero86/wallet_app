@@ -1,34 +1,33 @@
 class WalletBalance {
-  final double balanceAmount;
-  final String currency;
+  final double availableBalance;
+  final double ledgerBalance;
 
   WalletBalance({
-    required this.balanceAmount,
-    required this.currency,
+    required this.availableBalance,
+    required this.ledgerBalance,
   });
-
-  // ✅ Add copyWith
-  WalletBalance copyWith({
-    double? balanceAmount,
-    String? currency,
-  }) {
-    return WalletBalance(
-      balanceAmount: balanceAmount ?? this.balanceAmount,
-      currency: currency ?? this.currency,
-    );
-  }
 
   factory WalletBalance.fromJson(Map<String, dynamic> json) {
     return WalletBalance(
-      balanceAmount: (json['balanceAmount'] as num).toDouble(),
-      currency: json['currency'] as String,
+      availableBalance: (json['availableBalance'] ?? 0).toDouble(),
+      ledgerBalance: (json['ledgerBalance'] ?? 0).toDouble(),
     );
   }
 
   Map<String, dynamic> toJson() {
     return {
-      'balanceAmount': balanceAmount,
-      'currency': currency,
+      'availableBalance': availableBalance,
+      'ledgerBalance': ledgerBalance,
     };
+  }
+
+  WalletBalance copyWith({
+    double? availableBalance,
+    double? ledgerBalance,
+  }) {
+    return WalletBalance(
+      availableBalance: availableBalance ?? this.availableBalance,
+      ledgerBalance: ledgerBalance ?? this.ledgerBalance,
+    );
   }
 }
